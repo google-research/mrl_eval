@@ -1,0 +1,6 @@
+MIXTURE_OR_TASK_NAME = "nemo_targets_as_entity_markers_morph_level_mt5"
+BATCH_SIZE = 64
+TASK_FEATURE_LENGTHS = {"inputs": 200, "targets": 240}
+BEST_METRIC_NAME = "eval/token_level_span_f1"
+BEST_METRIC_MODE = "max"
+DROPOUT_RATE=0.1

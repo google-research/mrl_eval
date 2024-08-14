@@ -1,0 +1,14 @@
+include "mrl_eval/models/gin/finetune.gin"
+include "mrl_eval/models/mt5/gin/xl.gin" 
+include "mrl_eval/models/gin/save_best_model.gin"
+include "mrl_eval/datasets/hesum/finetune_hyperparams/mt5_hp_xl.gin"
+
+
+# Configure trainer hyperparameters.
+from t5x import utils
+RANDOM_SEED = 41
+TRAIN_STEPS=1004096
+LOSS_NORMALIZING_FACTOR=193536 # pretraining batch_size * target_token_length.
+
+utils.create_learning_rate_scheduler.base_learning_rate=0.001
+utils.create_learning_rate_scheduler.factors='constant'

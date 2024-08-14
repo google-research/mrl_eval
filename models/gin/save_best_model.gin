@@ -1,0 +1,20 @@
+from __gin__ import dynamic_registration
+from mrl_eval.models import gin_str_utils 
+
+from t5x import checkpoints
+from t5x import utils
+
+utils.SaveCheckpointConfig:
+  keep = 1
+  checkpointer_cls = @checkpoints.SaveBestCheckpointer
+
+BEST_METRIC_NAME = %gin.REQUIRED
+BEST_METRIC_MODE = %gin.REQUIRED
+
+metric_name_builder/gin_str_utils.join:
+  values = ['inference_eval', %MIXTURE_OR_TASK_NAME, %BEST_METRIC_NAME]
+  delimiter = '/'
+
+checkpoints.OrbaxCheckpointManagerInterface:
+  metric_name_to_monitor = @metric_name_builder/gin_str_utils.join()
+  metric_mode = %BEST_METRIC_MODE

@@ -1,0 +1,6 @@
+MIXTURE_OR_TASK_NAME = "heq_mt5"
+BATCH_SIZE = 32
+TASK_FEATURE_LENGTHS = {"inputs": 800, "targets": 180}
+BEST_METRIC_NAME = "eval/tlnls"
+BEST_METRIC_MODE = "max"
+DROPOUT_RATE=0.1

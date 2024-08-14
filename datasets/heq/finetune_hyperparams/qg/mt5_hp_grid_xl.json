@@ -1,0 +1,45 @@
+{
+  "hparam_grid":
+    [
+      {
+        "param": "gin.MIXTURE_OR_TASK_NAME",
+        "values": ["heq_question_gen_mt5"]
+      },
+      {
+        "param": "gin.RANDOM_SEED",
+        "values": [41, 42, 43, 44, 45]
+      },
+      {
+        "param": "gin.BATCH_SIZE",
+        "values": [32]
+      },
+      {
+        "param": "gin.TASK_FEATURE_LENGTHS",
+        "values": [{"inputs": 800, "targets": 80}]
+      },
+      {
+        "param": "gin.TRAIN_STEPS",
+        "values": [1004096]
+      },
+      {
+        "param": "gin.DROPOUT_RATE",
+        "values": [0.1]
+      },
+      {
+        "param": "gin.utils.create_learning_rate_scheduler.base_learning_rate",
+        "values": [0.001]
+      },
+      {
+        "param": "gin.utils.create_learning_rate_scheduler.factors",
+        "values": ["constant"]
+      },
+      {
+        "param": "gin.BEST_METRIC_NAME",
+        "values": ["eval/rougeL"]
+      },
+      {
+        "param": "gin.BEST_METRIC_MODE",
+        "values": ["max"]
+      }
+    ]
+}

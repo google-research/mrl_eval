@@ -1,0 +1,15 @@
+# mT5 Large model.
+include "mrl_eval/models/mt5/gin/base.gin"  # imports vocab, optimizer and model.
+
+# ------------------- Network specification overrides --------------------------
+NUM_ENCODER_LAYERS = 24
+NUM_DECODER_LAYERS = 24
+NUM_HEADS = 16
+HEAD_DIM = 64
+EMBED_DIM = 1024
+MLP_DIM = 2816
+  
+# ------------------- Initial checkpoint --------------------------------------
+INITIAL_CHECKPOINT_PATH = "gs://t5-data/pretrained_models/t5x/mt5_large/checkpoint_1000000"
+
+partitioning.PjitPartitioner.model_parallel_submesh = (1, 1, 1, 1)

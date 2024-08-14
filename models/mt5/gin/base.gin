@@ -1,0 +1,16 @@
+include "mrl_eval/models/mt5/gin/mt5_1_1.gin"  # imports vocab, optimizer and model.
+
+# ------------------ Architecture override ------------------------------------
+NUM_ENCODER_LAYERS = 12
+NUM_DECODER_LAYERS = 12
+NUM_HEADS = 12
+HEAD_DIM = 64
+EMBED_DIM = 768
+MLP_DIM = 2048
+
+# ------------------- Checkpoint ----------------------------------------------
+BATCH_SIZE=128
+
+INITIAL_CHECKPOINT_PATH = 'gs://t5-data/pretrained_models/t5x/mt5_base/checkpoint_1000000'
+
+partitioning.PjitPartitioner.model_parallel_submesh = (1, 1, 1, 1)

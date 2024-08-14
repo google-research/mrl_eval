@@ -1,0 +1,26 @@
+include "mrl_eval/models/gin/finetune.gin"
+
+from __gin__ import dynamic_registration
+import __main__ as train_script
+
+import mrl_eval.models.tasks
+
+from t5x import partitioning
+from t5x import trainer
+from t5x import utils
+
+# Defaults, this should be defined per task
+TASK_FEATURE_LENGTHS = {'inputs': 2048, 'targets': 512}
+
+USE_CACHED_TASKS = False
+EVAL_PERIOD = 100
+EVAL_STEPS = %EVAL_PERIOD
+
+train_script.train.eval_period = %EVAL_PERIOD
+utils.SaveCheckpointConfig.period = %EVAL_PERIOD
+
+utils.create_learning_rate_scheduler.step_offset = 1000000
+
+train/utils.DatasetConfig.seed = %RANDOM_SEED
+
+LOSS_NORMALIZING_FACTOR = 193536 

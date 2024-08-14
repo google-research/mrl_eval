@@ -1,0 +1,6 @@
+MIXTURE_OR_TASK_NAME = "hebnli_mt5"
+BATCH_SIZE = 128
+TASK_FEATURE_LENGTHS = {"inputs": 250, "targets": 5}
+BEST_METRIC_NAME = "eval/macro_f1"
+BEST_METRIC_MODE = "max"
+DROPOUT_RATE=0.1

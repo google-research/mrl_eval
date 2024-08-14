@@ -1,0 +1,10 @@
+tqdm
+rich
+pandas
+immutabledict
+Levenshtein
+rouge_score
+transformers
+accelerate
+tensorflow==2.12.0
+sentencepiece
