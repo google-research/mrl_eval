@@ -63,10 +63,17 @@ Your predictions file is expected to be a jsonl file in the following format:
 We finetune mT5-xl model per task as the first baseline. Results are shown in
 the table below.
 
-       | HeQ   | HeQ-QG         | HeSum         | NEMO           | Sentiment | HeBNLI
------- | ----- | -------------- | ------------- | -------------- | --------- | ------
-Model  | TLNLS | R1/R2/RL       | R1/R2/RL      | Token/Morph F1 | Macro F1  | Macro F1
-mT5-XL | 83.6  | 33.5/16.9/33.1 | 17.9/7.2/15.0 | 86.3/84.8      | 85.0     | 84.6
+<table>
+<tr>
+<th></th> <th>HeQ</th> <th>HeQ-QG</th> <th>HeSum</th> <th>NEMO</th> <th>Sentiment</th> <th>HeBNLI</th>
+</tr>
+<tr>
+<td>Model</td> <td>TLNLS</td> <td>R1/R2/RL</td> <td>R1/R2/RL</td> <td>Token/Morph F1</td> <td>Macro F1</td> <td>Macro</td>
+</tr>
+<tr>
+<td>mT5-XL</td> <td>83.6</td> <td>33.5/16.9/33.1</td> <td>17.9/7.2/15.0</td> <td>86.3/84.8</td> <td>85.0</td> <td>84.6</td>
+</tr>
+</table>
 
 We provide scripts to finetune mT5 and generate responses to the test sets using
 both [T5X](#t5x) and [Huggignface transformers](#huggignface transformers).
