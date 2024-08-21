@@ -3,18 +3,18 @@ Note: This is not an officially supported Google product.
 
 This repository contains code for downloading, processing, fine-tuning, running
 inference, and evaluating models in a fine-tuning setting on various natural
-language tasks in Hebrew (additional languages to follow). The tasks are
+language tasks in Hebrew (Arabic to follow). The tasks are
 detailed in the following table.
 
 Name        | Task                       | Metric   | Paper / Page
 ----------- | -------------------------- | -------- | ------------
-HeQ         | Question Answering         | TLNLS    | [paper](https://aclanthology.org/2023.findings-emnlp.915/)
-HeQ-QG      | Question Generation        | Rouge    | New, same data as HeQ
-HeSum       | Summarization              | Rouge    | [paper](https://arxiv.org/pdf/2406.03897)
-HeSentiment | Sentiment Analysis         | Macro F1 | [page](https://huggingface.co/datasets/HebArabNlpProject/HebrewSentiment)
-Nemo-Token  | NER (token level)          | F1       | [paper](https://arxiv.org/pdf/2007.15620)
-Nemo-Morph  | NER (morph level)          | F1       | [paper](https://arxiv.org/pdf/2007.15620)
-HebNLI      | Natural Language Inference | Macro F1 | [page](https://github.com/NNLP-IL/HebNLI)
+HeQ         | Question Answering         | TLNLS    | [Paper](https://aclanthology.org/2023.findings-emnlp.915/)
+HeQ-QG      | Question Generation        | Rouge    | New formulation to HeQ
+HeSum       | Summarization              | Rouge    | [Paper](https://arxiv.org/pdf/2406.03897)
+HeSentiment | Sentiment Analysis         | Macro F1 | [Page](https://huggingface.co/datasets/HebArabNlpProject/HebrewSentiment)
+Nemo-Token  | NER (token level)          | F1       | [Paper](https://arxiv.org/pdf/2007.15620)
+Nemo-Morph  | NER (morph level)          | F1       | [Paper](https://arxiv.org/pdf/2007.15620)
+HebNLI      | Natural Language Inference | Macro F1 | [Page](https://github.com/NNLP-IL/HebNLI)
 
 ## Setup
 
