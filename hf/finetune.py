@@ -116,7 +116,7 @@ def main(argv: Sequence[str]):
   dataset = hf_dataset_factory(_DATASET.value, data_args, tokenizer)
   _print_example(dataset)
 
-  model = transformers.MT5ForConditionalGeneration.from_pretrained(
+  model = transformers.AutoModel.from_pretrained(
       model_args.model_name_or_path
   )
 

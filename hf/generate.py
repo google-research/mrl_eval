@@ -90,7 +90,7 @@ def main(argv: Sequence[str]):
 
   dataset = hf_dataset_factory(_DATASET.value, data_args, tokenizer).test_set()
 
-  model = transformers.MT5ForConditionalGeneration.from_pretrained(
+  model = transformers.AutoModel.from_pretrained(
       _CKPT_PATH.value
   ).to("cuda")
   model.eval()
