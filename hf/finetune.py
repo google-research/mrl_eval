@@ -322,7 +322,7 @@ def _get_train_config_decoder_only(
       "per_device_train_batch_size": 32,
       "eval_strategy": "steps",
       "learning_rate": 1e-5,
-      "eval_steps": 50,
+      "eval_steps": 500,
       "save_total_limit": 1,
       "save_strategy": "no",
       "lr_scheduler_type": "linear",
