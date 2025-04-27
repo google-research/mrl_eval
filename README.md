@@ -31,9 +31,9 @@ The following tasks are supported:
 | Hebrew                 | HebNLI             | Natural Language Inference | Macro F1  | [Page](https://github.com/NNLP-IL/HebNLI)                                                                   |
 | Hebrew                 | HebCo          | Coreference Resolution         | Macro F1  | [Page](https://github.com/IAHLT/coref)                                                                      |
 | &nbsp;                       |                    |                            |            
-| Modern Standard Arabic | ArQ-MSA-QA         | Question Answering         | TyDiQA-F1     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                                |
+| Modern Standard Arabic | ArQ-MSA-QA         | Question Answering         | TLNLS     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                                |
 | Modern Standard Arabic | ArQ-MSA-QG         | Question Generation        | Rouge     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                                |
-| Modern Standard Arabic | ArTyDiQA-QA        | Question Answering         | TLNLS     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
+| Modern Standard Arabic | ArTyDiQA-QA        | Question Answering         | TyDiQA-F1     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
 | Modern Standard Arabic | ArTyDiQA-QG        | Question Generation        | Rouge     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
 | Modern Standard Arabic | IAHLT-NER          | Named Entity Recognition                        | F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/arabic-iahlt-NER)                                  |
 | &nbsp;                       |                    |                            |            
