@@ -1,0 +1,6 @@
+MIXTURE_OR_TASK_NAME = "hebco_mt5"
+BATCH_SIZE = 8
+TASK_FEATURE_LENGTHS = { "inputs": 2800, "targets": 3000}
+BEST_METRIC_NAME = "eval/macro_f1"
+BEST_METRIC_MODE = "max"
+DROPOUT_RATE=0.1

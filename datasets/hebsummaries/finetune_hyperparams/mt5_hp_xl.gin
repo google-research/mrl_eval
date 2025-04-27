@@ -1,0 +1,6 @@
+MIXTURE_OR_TASK_NAME = "hebsummaries_mt5"
+BATCH_SIZE = 8
+TASK_FEATURE_LENGTHS = { "inputs": 8192, "targets": 2048 }
+BEST_METRIC_NAME = "eval/rouge2"
+BEST_METRIC_MODE = "max"
+DROPOUT_RATE=0.1

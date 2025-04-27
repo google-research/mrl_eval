@@ -6,5 +6,11 @@ Levenshtein
 rouge_score
 transformers
 accelerate
-tensorflow==2.12.1
+tensorflow==2.16.1
+tf-keras==2.16.0
 sentencepiece
+pyarrow
+peft
+torch
+flash-attn
+scipy

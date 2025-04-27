@@ -27,22 +27,55 @@ def hf_dataset_factory(
     dataset_name: str,
     data_args: args.DataArguments,
     tokenizer: transformers.AutoTokenizer,
+    for_decoder_only: bool = False,
 ) -> hf_datasets_lib.HfDataset:
   """Dataset factory function from the dataset name."""
   match dataset_name:
     case constants.HESENTIMENT:
-      return hf_datasets.HfHeSentiment(data_args, tokenizer)
+      return hf_datasets.HfHeSentiment(data_args, tokenizer, for_decoder_only)
     case constants.HEQ:
-      return hf_datasets.HfHeQ(data_args, tokenizer)
+      return hf_datasets.HfHeQ(data_args, tokenizer, for_decoder_only)
     case constants.HEQ_QUESTION_GEN:
-      return hf_datasets.HfHeQQuestionGen(data_args, tokenizer)
+      return hf_datasets.HfHeQQuestionGen(
+          data_args, tokenizer, for_decoder_only
+      )
     case constants.NEMO_MORPH:
-      return hf_datasets.HfNemoMorph(data_args, tokenizer)
+      return hf_datasets.HfNemoMorph(data_args, tokenizer, for_decoder_only)
     case constants.NEMO_TOKEN:
-      return hf_datasets.HfNemoToken(data_args, tokenizer)
+      return hf_datasets.HfNemoToken(data_args, tokenizer, for_decoder_only)
     case constants.HESUM:
-      return hf_datasets.HfHeSum(data_args, tokenizer)
+      return hf_datasets.HfHeSum(data_args, tokenizer, for_decoder_only)
     case constants.HEBNLI:
-      return hf_datasets.HfHebNLI(data_args, tokenizer)
+      return hf_datasets.HfHebNLI(data_args, tokenizer, for_decoder_only)
+    case constants.HEBCO:
+      return hf_datasets.HfHebCo(data_args, tokenizer, for_decoder_only)
+    case constants.ARQ_SPOKEN:
+      return hf_datasets.HfArQ("spoken", data_args, tokenizer, for_decoder_only)
+    case constants.ARQ_SPOKEN_QUESTION_GEN:
+      return hf_datasets.HfArQQuestionGen(
+          "spoken", data_args, tokenizer, for_decoder_only
+      )
+    case constants.ARQ_MSA:
+      return hf_datasets.HfArQ("MSA", data_args, tokenizer, for_decoder_only)
+    case constants.ARQ_MSA_QUESTION_GEN:
+      return hf_datasets.HfArQQuestionGen(
+          "MSA", data_args, tokenizer, for_decoder_only
+      )
+    case constants.ARSENTIMENT:
+      return hf_datasets.HfArSentiment(data_args, tokenizer, for_decoder_only)
+    case constants.ARTYDIQA:
+      return hf_datasets.HfArTyDiQA(data_args, tokenizer, for_decoder_only)
+    case constants.ARTYDIQA_QUESTION_GEN:
+      return hf_datasets.HfArTyDiQAQuestionGen(
+          data_args, tokenizer, for_decoder_only
+      )
+    case constants.ARCOREF:
+      return hf_datasets.HfArCoref(data_args, tokenizer, for_decoder_only)
+    case constants.IAHLT_NER:
+      return hf_datasets.HfIahltNer(data_args, tokenizer, for_decoder_only)
+    case constants.HEBSUMMARIES:
+      return hf_datasets.HfHebSummaries(data_args, tokenizer, for_decoder_only)
+
+
     case _:
       raise ValueError(f"Dataset {dataset_name} is not defined.")

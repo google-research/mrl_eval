@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing the NLI dataset and writing to sotrage."""
+"""Preprocessing the NLI dataset and writing it to storage."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import copy
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import immutabledict
 import tensorflow as tf
@@ -29,8 +29,8 @@ from mrl_eval.evaluation import metrics
 from mrl_eval.utils import io_utils
 
 
-RawExample = Dict[str, Union[int, str]]
-FeatureMap = Dict[str, tf.train.Feature]
+RawExample = dict[str, Union[int, str]]
+FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 _EN_TO_HE_LABEL_MAPPING = immutabledict.immutabledict(
@@ -118,8 +118,20 @@ class HebNLI(dataset_lib.Dataset):
       processed_dataset.append(example)
     return processed_dataset
 
-  def _get_target(self, example):
+  def get_inputs(self, example):
+    return (
+        "משפט 1:"
+        + example["translation1"]
+        + "\n"
+        + "משפט 2:"
+        + example["translation2"]
+    )
+
+  def get_outputs(self, example):
     return example[self.HEB_LABEL_NAME]
+
+  def get_example_id(self, example):
+    return example["id"]
 
   def _translate_label(self, label):
     label_stripped = label.strip()

@@ -15,8 +15,8 @@
 
 """Metrics for evaluating the different tasks."""
 
-from collections.abc import Callable
-from typing import Any, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 from mrl_eval.evaluation import metrics_utils
 from rouge_score import rouge_scorer
 from rouge_score import scoring
@@ -25,18 +25,29 @@ MetricsFn = Callable[[list[Any], list[Any]], dict[str, float]]
 
 
 def tlnls(
-    targets, predictions
+    targets,
+    predictions,
+    null_answer_text = None,
 ):
   """Returns the tlnls metric.
 
   Args:
     targets: A sequence of sequences of targets for a single example.
     predictions: Each string is a prediction for a single example.
+    null_answer_text: The text of the null answer. If the prediction or any of
+      the targets is equal to this text, the metric will be calculated as EM for
+      this example.
 
   Returns:
     A dictionary with the tlnls metric.
   """
-  return {"tlnls": metrics_utils.tlnls_calc(targets, predictions)}
+
+  if isinstance(targets[0], str):
+    targets = [targets]
+
+  return {
+      "tlnls": metrics_utils.tlnls_calc(targets, predictions, null_answer_text)
+  }
 
 
 def f1(
@@ -146,3 +157,41 @@ def token_level_span_f1(
           targets, predictions
       )
   }
+
+
+def get_em_cluster_matching_f1_fn(
+    seq_to_cluster_parsing_fn,
+):
+  """Returns a cluster matching f1 metric function.
+
+  Args:
+    seq_to_cluster_parsing_fn: A function that parses a string into a list of
+      clusters.
+
+  Returns:
+    A cluster matching f1 metric function.
+  """
+
+  def cluster_matching_f1(
+      targets,
+      predictions,
+  ):
+    """Computes the cluster matching f1 score."""
+    matched_clusters = []
+    # pair the gt clusters with the pred clusters in each example to caclulate
+    # the f1 score stats:
+    for target, prediction in zip(targets, predictions):
+      gold_clusters = seq_to_cluster_parsing_fn(target)
+      predicted_clusters = seq_to_cluster_parsing_fn(prediction)
+      matched_clusters += metrics_utils.average_score_match_clusters(
+          gold_clusters, predicted_clusters
+      )
+    macro_f1 = metrics_utils.macro_f1_for_matching_clusters(
+        matched_clusters,
+        comparing_fn=metrics_utils.exactly_comparing_clusters,
+    )
+    return {
+        "macro_f1": macro_f1,
+    }
+
+  return cluster_matching_f1

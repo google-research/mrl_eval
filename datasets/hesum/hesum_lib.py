@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing the NLI dataset and writing to the storage."""
+"""Preprocessing the HeSum dataset and writing it to storage."""
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 import copy
 import pathlib
-from typing import Any, Dict, List
+from typing import Any
 
 import immutabledict
 import tensorflow as tf
@@ -29,13 +29,13 @@ from mrl_eval.evaluation import metrics
 from mrl_eval.utils import io_utils
 
 
-RawExample = Dict[str, str]
-FeatureMap = Dict[str, tf.train.Feature]
+RawExample = dict[str, str]
+FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 
 class HeSum(dataset_lib.Dataset):
-  """Implementation of the Dataset class for HebNLI.
+  """Implementation of the Dataset class for the HeSum dataset.
 
   This class transforms from raw dataset files into TensorFlow records.
   """
@@ -88,6 +88,15 @@ class HeSum(dataset_lib.Dataset):
     df = io_utils.read_csv(file_path)
     return df.to_dict("records")
 
+  def get_inputs(self, example):
+    return example[self.ARTICLE]
+
+  def get_outputs(self, example):
+    return example[self.SUMMARY]
+
+  def get_example_id(self, example):
+    return example["id"]
+
   def _add_example_ids(self, dataset):
     dataset_with_ids = []
     for i, raw_example in enumerate(dataset):
@@ -98,6 +107,3 @@ class HeSum(dataset_lib.Dataset):
 
   def process_raw_examples(self, dataset):
     return self._add_example_ids(dataset)
-
-  def _get_target(self, example):
-    return example[self.SUMMARY]

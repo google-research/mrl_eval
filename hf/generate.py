@@ -15,13 +15,14 @@
 
 """Generate test answers for a dataset given a finetuned a model."""
 
+from collections.abc import Sequence
+import functools
 import json
-import os
 import pathlib
-from typing import Sequence
 
 from absl import app
 from absl import flags
+import peft
 import rich
 import torch
 import tqdm
@@ -33,19 +34,13 @@ from mrl_eval.hf.args import ModelArguments
 from mrl_eval.hf.args import TASKS_CONFIGS
 from mrl_eval.hf.datasets.dataset_factory import hf_dataset_factory
 
+Path = pathlib.Path  # pylint: disable=invalid-import-order
+
 
 _DATASET = flags.DEFINE_enum(
     "dataset",
     None,
-    [
-        constants.HEQ,
-        constants.HEQ_QUESTION_GEN,
-        constants.NEMO_TOKEN,
-        constants.NEMO_MORPH,
-        constants.HEBNLI,
-        constants.HESENTIMENT,
-        constants.HESUM,
-    ],
+    constants.DATASETS,
     "The dataset you'd like to finetune on.",
 )
 
@@ -65,11 +60,27 @@ def _print_args(model_args, data_args):
   rich.print(data_args)
 
 
+def _has_peft_config(model_name_or_path: str) -> bool:
+  peft_config = Path(model_name_or_path) / peft.utils.CONFIG_NAME
+  return peft_config.exists()
+
+
+def _is_encoder_decoder(model_name_or_path: str) -> bool:
+  if _has_peft_config(model_name_or_path):
+    config = peft.PeftConfig.from_pretrained(model_name_or_path)
+    base_model_name = config.base_model_name_or_path
+    model_config = transformers.AutoConfig.from_pretrained(base_model_name)
+  else:
+    model_config = transformers.AutoConfig.from_pretrained(model_name_or_path)
+
+  return model_config.is_encoder_decoder
+
+
 def main(argv: Sequence[str]):
   print(argv)
   task = _DATASET.value
 
-  generation_config = {
+  config = {
       "model_name_or_path": _CKPT_PATH.value,
       "load_train": False,
       "load_validation": False,
@@ -77,10 +88,10 @@ def main(argv: Sequence[str]):
   }
 
   for key in ["max_inputs_length", "max_targets_length"]:
-    generation_config[key] = TASKS_CONFIGS[task][key]
+    config[key] = TASKS_CONFIGS[task][key]
 
   parser = transformers.HfArgumentParser((ModelArguments, DataArguments))
-  model_args, data_args = parser.parse_dict(generation_config)
+  model_args, data_args = parser.parse_dict(config)
 
   _print_args(model_args, data_args)
 
@@ -88,26 +99,12 @@ def main(argv: Sequence[str]):
       model_args.model_name_or_path, use_fast=True
   )
 
-  dataset = hf_dataset_factory(_DATASET.value, data_args, tokenizer).test_set()
-
-  model = transformers.AutoModel.from_pretrained(
-      _CKPT_PATH.value
-  ).to("cuda")
-  model.eval()
-  print(f"Model loaded onto {model.device}")
-
-  ckpt_path = pathlib.Path(_CKPT_PATH.value)
-  output_dir = ckpt_path.parent / "generation"
-  os.makedirs(output_dir, exist_ok=True)
-  output_file_path = output_dir / f"gen_{ckpt_path.name}.jsonl"
-
-  batch_size = 16 if _DATASET.value != constants.HESUM else 8
-
-  def collate_fn(batch):
+  def collate_fn(batch, padding_side="right"):
     input_ids = torch.nn.utils.rnn.pad_sequence(
         [ex["input_ids"] for ex in batch],
         batch_first=True,
         padding_value=tokenizer.pad_token_id,
+        padding_side=padding_side,
     )
     attention_mask = (
         input_ids != tokenizer.pad_token_id
@@ -120,11 +117,63 @@ def main(argv: Sequence[str]):
         "attention_mask": attention_mask,
     }
 
-  dataloader = torch.utils.data.DataLoader(
-      dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn
-  )
+  batch_size = 16 if _DATASET.value != constants.HESUM else 8
 
-  with open(output_file_path, "w") as f:
+  if (is_encoder_decoder := _is_encoder_decoder(model_args.model_name_or_path)):
+
+    dataset = hf_dataset_factory(
+        _DATASET.value, data_args, tokenizer, for_decoder_only=False
+    ).test_set()
+
+    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(
+        _CKPT_PATH.value
+    ).to("cuda")
+
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=functools.partial(collate_fn, padding_side="right"),
+    )
+
+    generation_config = transformers.GenerationConfig(
+        max_new_tokens=data_args.max_targets_length,
+        num_beams=4,
+        do_sample=False,
+    )
+
+  else:
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+        _CKPT_PATH.value
+    ).to("cuda")
+
+    tokenizer.pad_token = tokenizer.eos_token
+    model.generation_config.pad_token_id = tokenizer.pad_token_id
+
+    dataset = hf_dataset_factory(
+        _DATASET.value, data_args, tokenizer, for_decoder_only=True
+    ).test_set()
+
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=functools.partial(collate_fn, padding_side="left"),
+    )
+
+    generation_config = transformers.GenerationConfig(
+        max_new_tokens=data_args.max_targets_length,
+    )
+
+  model.eval()
+  print(f"Model loaded onto {model.device}")
+
+  ckpt_path = Path(_CKPT_PATH.value)
+  output_dir = ckpt_path.parent / "generation"
+  output_dir.mkdir(exist_ok=True, parents=True)
+  output_file_path = output_dir / f"gen_{ckpt_path.name}.jsonl"
+
+  with output_file_path.open("w") as f:
 
     for batch in tqdm.tqdm(dataloader):
       input_ids = batch["input_ids"].to("cuda")
@@ -134,12 +183,12 @@ def main(argv: Sequence[str]):
         output_ids = model.generate(
             input_ids,
             attention_mask=attention_mask,
-            generation_config=transformers.GenerationConfig(
-                max_new_tokens=data_args.max_targets_length,
-                num_beams=4,
-                do_sample=False,
-            ),
+            generation_config=generation_config,
         )
+
+      if not is_encoder_decoder:  # discard input tokens
+        input_length = input_ids.shape[1]
+        output_ids = output_ids[:, input_length:]
 
       responses = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
@@ -150,10 +199,11 @@ def main(argv: Sequence[str]):
             for k, v in batch.items()
             if k not in ["input_ids", "attention_mask", "labels"]
         }
-        output = {"input": input_dict, "prediction": responses[i]}
+        output = {"input": input_dict, "prediction": responses[i].strip()}
         f.write(json.dumps(output, ensure_ascii=False) + "\n")
 
   print(f"Generated responses saved to {output_file_path}")
+
 
 
 if __name__ == "__main__":

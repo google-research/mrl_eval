@@ -15,6 +15,15 @@
 
 """Datasets constants."""
 
+ARTYDIQA = "artydiqa"
+ARTYDIQA_QUESTION_GEN = "artydiqa_question_gen"
+ARSENTIMENT = "arsentiment"
+ARCOREF = "arcoref"
+IAHLT_NER = "iahlt_ner"
+ARQ_SPOKEN = "arq_spoken"
+ARQ_MSA = "arq_MSA"
+ARQ_SPOKEN_QUESTION_GEN = "arq_spoken_question_gen"
+ARQ_MSA_QUESTION_GEN = "arq_MSA_question_gen"
 HEQ = "heq"
 HEQ_QUESTION_GEN = "heq_question_gen"
 NEMO = "nemo"
@@ -23,5 +32,31 @@ NEMO_MORPH = "nemo_morph"
 HEBNLI = "hebnli"
 HESENTIMENT = "hesentiment"
 HESUM = "hesum"
+HEBCO = "hebco"
+HEBSUMMARIES = "hebsummaries"
+
+
+DATASETS = (
+    ARTYDIQA,
+    ARTYDIQA_QUESTION_GEN,
+    ARSENTIMENT,
+    ARQ_SPOKEN,
+    ARQ_MSA,
+    ARQ_SPOKEN_QUESTION_GEN,
+    ARQ_MSA_QUESTION_GEN,
+    HEQ,
+    HEQ_QUESTION_GEN,
+    NEMO,
+    NEMO_TOKEN,
+    NEMO_MORPH,
+    HEBNLI,
+    HESENTIMENT,
+    HESUM,
+    HEBCO,
+    ARCOREF,
+    IAHLT_NER,
+    HEBSUMMARIES,
+
+)
 
 BASE_PATH = "mrl_eval_data"

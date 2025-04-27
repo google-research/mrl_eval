@@ -1,0 +1,44 @@
+{
+  "hparam_grid": [
+    {
+      "param": "gin.MIXTURE_OR_TASK_NAME",
+      "values": ["arcoref_mt5"]
+    },
+    {
+      "param": "gin.RANDOM_SEED",
+      "values": [41, 42, 43]
+    },
+    {
+      "param": "gin.BATCH_SIZE",
+      "values": [8]
+    },
+    {
+      "param": "gin.TASK_FEATURE_LENGTHS",
+      "values": [{ "inputs": 2800, "targets": 3000}]
+    },
+    {
+      "param": "gin.TRAIN_STEPS",
+      "values": [1012288]
+    },
+    {
+      "param": "gin.DROPOUT_RATE",
+      "values": [0.1]
+    },
+    {
+      "param": "gin.utils.create_learning_rate_scheduler.base_learning_rate",
+      "values": [0.001]
+    },
+    {
+      "param": "gin.utils.create_learning_rate_scheduler.factors",
+      "values": ["constant"]
+    },
+    {
+      "param": "gin.BEST_METRIC_NAME",
+      "values": ["eval/macro_f1"]
+    },
+    {
+      "param": "gin.BEST_METRIC_MODE",
+      "values": ["max"]
+    }
+  ]
+}

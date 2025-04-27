@@ -16,12 +16,33 @@
 """Defining HF datasets."""
 
 from collections.abc import Sequence
+import functools
 import pathlib
 import re
+from typing import TypeAlias
 
 from mrl_eval.datasets import constants
+from mrl_eval.datasets.arcoref import arcoref_lib
+from mrl_eval.datasets.artydiqa import artydiqa_lib
+from mrl_eval.datasets.hebco import hebco_lib
+from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
 from mrl_eval.evaluation import metrics
 from mrl_eval.hf.datasets import hf_datasets_lib
+
+
+_AR_ANSWER_PROMPT = "الجواب:"
+_AR_QUESTION_PROMPT = "السؤال:"
+_AR_CONTEXT_PROMPT = "النص:"
+
+_HE_NULL_ANSWER_TEXT = "לא ניתן לענות על השאלה על סמך ההקשר."
+_AR_NULL_ANSWER_TEXT = "لا يمكن الإجابة على السؤال من النص."
+_AR_NLI_PREMISE_PROMPT = "مقدمة:"
+_AR_NLI_HYPOTHESIS_PROMPT = "فرضية:"
+_AR_TYDIQA_QUESTION_PROMPT = "السؤال:"
+_AR_TYDIQA_CONTEXT_PROMPT = "النص:"
+_AR_TYDIQA_ANSWER_PROMPT = "الجواب:"
+
+Sample: TypeAlias = hf_datasets_lib.Sample
 
 
 class HfHeSentiment(hf_datasets_lib.HfDataset):
@@ -67,11 +88,13 @@ class HfHeQ(hf_datasets_lib.HfDataset):
     return constants.HEQ
 
   def metrics(self):
-    return [metrics.em, metrics.f1, metrics.tlnls]
+    return [
+        metrics.em,
+        metrics.f1,
+        functools.partial(metrics.tlnls, null_answer_text=_HE_NULL_ANSWER_TEXT),
+    ]
 
-  def _postprocess_val_targets(
-      self, targets
-  ):
+  def _postprocess_val_targets(self, targets):
     return [[t] for t in targets]
 
 
@@ -86,7 +109,7 @@ class HfHeQQuestionGen(hf_datasets_lib.HfDataset):
     return {
         "inputs": inputs,
         "targets": question,
-        "id": sample["id"],
+        "id": sample["id"],  # pylint: disable=redefined-builtin
         "context": context,
         "question": question,
         "answers": answers,
@@ -102,7 +125,7 @@ class HfHeQQuestionGen(hf_datasets_lib.HfDataset):
   def get_data_file_path(self, split):
     return (
         pathlib.Path(constants.BASE_PATH)
-        / constants.HEQ
+        / constants.HEQ_QUESTION_GEN
         / "jsonl"
         / f"{split}.jsonl"
     )
@@ -121,6 +144,24 @@ class HfHeSum(hf_datasets_lib.HfDataset):
   @property
   def dataset_name(self):
     return constants.HESUM
+
+  def metrics(self):
+    return [metrics.rouge]
+
+
+class HfHebSummaries(hf_datasets_lib.HfDataset):
+  """Hebrew summarization dataset."""
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample["id"],
+        "inputs": sample["text_raw"],
+        "targets": sample["summary"],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.HEBSUMMARIES
 
   def metrics(self):
     return [metrics.rouge]
@@ -191,6 +232,276 @@ class HfHebNLI(hf_datasets_lib.HfDataset):
     ]
 
 
+class HfHebCo(hf_datasets_lib.HfDataset):
+  """Hebrew coreference resolution dataset."""
+
+  TEXT_FIELD = hebco_lib.Hebco.TEXT_FIELD
+  TARGET_FIELD = hebco_lib.Hebco.TARGET_FIELD
+  ID_FIELD = hebco_lib.Hebco.ID_FIELD
+
+  INNER_SEP = hebco_lib.Hebco.INNER_SEP
+  OUTER_SEP = hebco_lib.Hebco.OUTER_SEP
+  WORD_SEP = hebco_lib.Hebco.WORD_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.HEBCO
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            hebco_lib.get_parse_string_representation(
+                inner_sep=self.INNER_SEP, outer_sep=self.OUTER_SEP
+            )
+        )
+    ]
+
+
+class HfArCoref(hf_datasets_lib.HfDataset):
+  """Arabic coreference resolution dataset."""
+
+  TEXT_FIELD = arcoref_lib.ArCoref.TEXT_FIELD
+  TARGET_FIELD = arcoref_lib.ArCoref.TARGET_FIELD
+  ID_FIELD = arcoref_lib.ArCoref.ID_FIELD
+
+  INNER_SEP = arcoref_lib.ArCoref.INNER_SEP
+  OUTER_SEP = arcoref_lib.ArCoref.OUTER_SEP
+  WORD_SEP = arcoref_lib.ArCoref.WORD_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.ARCOREF
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            hebco_lib.get_parse_string_representation(
+                inner_sep=self.INNER_SEP, outer_sep=self.OUTER_SEP
+            )
+        )
+    ]
+
+
+class HfArQ(hf_datasets_lib.HfDataset):
+  """Arabic Question Answering dataset."""
+
+  def __init__(self, variant = "spoken", *args, **kwargs):
+    if variant not in ["spoken", "MSA"]:
+      raise ValueError(
+          f"Unsupported ArQ variant: {variant}. Supported variants are 'spoken'"
+          " and 'MSA'."
+      )
+    self._variant = variant
+    super().__init__(*args, **kwargs)
+
+  def _preprocess_example(self, sample):
+    answers = sample["answers"]["text"]
+    question = sample["question"]
+    context = sample["context"]
+    inputs = _string_join(
+        [_AR_QUESTION_PROMPT, question, _AR_CONTEXT_PROMPT, context]
+    )
+    samp_id = sample["id"]
+    return {
+        "inputs": inputs,
+        "targets": answers[0],
+        "id": samp_id,
+        "context": context,
+        "question": question,
+        "answers": answers,
+    }
+
+  @property
+  def dataset_name(self):
+    return (
+        constants.ARQ_SPOKEN if self._variant == "spoken" else constants.ARQ_MSA
+    )
+
+  def metrics(self):
+    return [
+        metrics.em,
+        metrics.f1,
+        functools.partial(metrics.tlnls, null_answer_text=_AR_NULL_ANSWER_TEXT),
+    ]
+
+  def _postprocess_val_targets(self, targets):
+    return [[t] for t in targets]
+
+
+class HfArQQuestionGen(hf_datasets_lib.HfDataset):
+  """Arabic Question Generation dataset."""
+
+  def __init__(self, variant = "spoken", *args, **kwargs):
+    if variant not in ["spoken", "MSA"]:
+      raise ValueError(
+          f"Unsupported ArQ variant: {variant}. Supported variants are 'spoken'"
+          " and 'MSA'."
+      )
+    self._variant = variant
+    super().__init__(*args, **kwargs)
+
+  def _preprocess_example(self, sample):
+    answers = sample["answers"]["text"]
+    question = sample["question"]
+    context = sample["context"]
+    inputs = _string_join(
+        [_AR_ANSWER_PROMPT, answers[0], _AR_CONTEXT_PROMPT, context]
+    )
+    samp_id = sample["id"]
+    return {
+        "inputs": inputs,
+        "targets": question,
+        "id": samp_id,
+        "context": context,
+        "question": question,
+        "answers": answers,
+    }
+
+  @property
+  def dataset_name(self):
+    return (
+        constants.ARQ_SPOKEN_QUESTION_GEN
+        if self._variant == "spoken"
+        else constants.ARQ_MSA_QUESTION_GEN
+    )
+
+  def metrics(self):
+    return [metrics.rouge]
+
+
+class HfArSentiment(hf_datasets_lib.HfDataset):
+  """Arabic sentiment classification dataset."""
+
+  def _preprocess_example(self, sample):
+    return {
+        "inputs": sample["text"],
+        "targets": sample["sentiment"],
+        "id": sample["id"],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.ARSENTIMENT
+
+  def metrics(self):
+    return [
+        metrics.accuracy,
+        metrics.get_macro_f1_fn(["إيجابي", "سلبي", "محايد", "معقد"]),
+    ]
+
+
 def _string_join(lst):
   """Joins elements on space, collapsing consecutive spaces."""
   return re.sub(r"\s+", " ", " ".join(lst))
+
+
+class HfArTyDiQA(hf_datasets_lib.HfDataset):
+  """Arabic question answering dataset based on TyDiQA."""
+
+  def _preprocess_example(self, sample):
+    answers = sample["answers"]["text"]
+    question = sample["question"]
+    context = sample["context"]
+    inputs = _string_join([
+        _AR_TYDIQA_QUESTION_PROMPT,
+        question,
+        _AR_TYDIQA_CONTEXT_PROMPT,
+        context,
+    ])
+
+    return {
+        "inputs": inputs,
+        "targets": answers[0],
+        "id": sample["id"],
+        "context": context,
+        "question": question,
+        "answers": answers,
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.ARTYDIQA
+
+  def metrics(self):
+    return [metrics.em, metrics.f1, artydiqa_lib.tydiqa_f1_score]
+
+  def _postprocess_val_targets(self, targets):
+    return [[t] for t in targets]
+
+
+class HfArTyDiQAQuestionGen(hf_datasets_lib.HfDataset):
+  """Arabic question generation dataset based on TyDiQA."""
+
+  def _preprocess_example(self, sample):
+    answers = sample["answers"]["text"]
+    question = sample["question"]
+    context = sample["context"]
+    inputs = _string_join([
+        _AR_TYDIQA_ANSWER_PROMPT,
+        answers[0],
+        _AR_TYDIQA_CONTEXT_PROMPT,
+        context,
+    ])
+    samp_id = sample["id"]
+
+    return {
+        "inputs": inputs,
+        "targets": question,
+        "id": samp_id,
+        "context": context,
+        "question": question,
+        "answers": answers,
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.ARTYDIQA_QUESTION_GEN
+
+  def metrics(self):
+    return [metrics.rouge]
+
+
+class HfIahltNer(hf_datasets_lib.HfDataset):
+  """Arabic MSA entity linking dataset."""
+
+  TEXT_FIELD = iahlt_ner_lib.IahltNer.TEXT_KEY
+  TARGET_FIELD = iahlt_ner_lib.IahltNer.LABEL_KEY
+  ID_FIELD = iahlt_ner_lib.IahltNer.ID_FIELD
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def get_data_file_path(self, split):
+    return (
+        pathlib.Path(constants.BASE_PATH)
+        / self.dataset_name
+        / "jsonl"
+        / f"{split}.jsonl"
+    )
+
+  @property
+  def dataset_name(self):
+    return constants.IAHLT_NER
+
+  def metrics(self):
+    return [metrics.token_level_span_f1]
+
+

@@ -19,7 +19,7 @@ This script receives name of task and path to prediction file and returns the
 score of the task metric.
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from absl import app
 from absl import flags
@@ -32,15 +32,7 @@ from mrl_eval.utils import io_utils
 _DATASET = flags.DEFINE_enum(
     "dataset",
     None,
-    [
-        constants.HEQ,
-        constants.HEQ_QUESTION_GEN,
-        constants.NEMO_TOKEN,
-        constants.NEMO_MORPH,
-        constants.HEBNLI,
-        constants.HESENTIMENT,
-        constants.HESUM,
-    ],
+    constants.DATASETS,
     "The dataset you'd like to evaluate.",
 )
 

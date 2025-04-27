@@ -23,4 +23,4 @@ utils.create_learning_rate_scheduler.step_offset = 1000000
 
 train/utils.DatasetConfig.seed = %RANDOM_SEED
 
-LOSS_NORMALIZING_FACTOR = 193536 
+LOSS_NORMALIZING_FACTOR = 193536 # `pretraining batch_size` * `target_token_length`.

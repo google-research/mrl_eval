@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing the  Sentiment Analysis dataset and writing to the storage."""
+"""Preprocessing the  Sentiment Analysis dataset and writing it to storage."""
 
 from collections.abc import Callable, Mapping
 import copy
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 from immutabledict import immutabledict
 import tensorflow as tf
 from mrl_eval.datasets import constants
@@ -26,8 +26,8 @@ from mrl_eval.datasets import dataset_lib
 from mrl_eval.evaluation import metrics
 from mrl_eval.utils import io_utils
 
-RawExample = Dict[str, Union[int, str]]
-FeatureMap = Dict[str, tf.train.Feature]
+RawExample = dict[str, Union[int, str]]
+FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 
@@ -117,9 +117,6 @@ class HeSentiment(dataset_lib.Dataset):
   def process_raw_examples(self, dataset):
     return self._translate_labels(dataset)
 
-  def _get_target(self, example):
-    return example[self.HEBREW_LABEL_NAME]
-
   def _translate_sentiment(self, sentiment):
     sentiment_stripped = sentiment.strip()
     if sentiment_stripped not in self._en_to_he_label_mapping:
@@ -128,3 +125,12 @@ class HeSentiment(dataset_lib.Dataset):
           f" Received {sentiment_stripped}"
       )
     return self._en_to_he_label_mapping[sentiment_stripped]
+
+  def get_inputs(self, example):
+    return str(example[self.TEXT_NAME])
+
+  def get_outputs(self, example):
+    return example[self.HEBREW_LABEL_NAME]
+
+  def get_example_id(self, example):
+    return example["id"]

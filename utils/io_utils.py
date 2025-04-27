@@ -18,7 +18,7 @@
 import json
 import os
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import pandas as pd
 
@@ -49,7 +49,7 @@ def read_csv(path):
     The csv object in the file.
   """
   with open_file(path, "r") as f:
-    df = pd.read_csv(f)
+    df = pd.read_csv(f, lineterminator="\n")
   return df
 
 
@@ -82,6 +82,19 @@ def read_jsonl(path):
       ret.append(json.loads(line.strip()))
 
   return ret
+
+
+def read_parquet(path):
+  """Reads a parquet file.
+
+  Args:
+    path: The path to the file.
+
+  Returns:
+    The parquet object in the file.
+  """
+  with open_file(path, "rb") as f:
+    return pd.read_parquet(f)
 
 
 def write_jsonl(path, dataset):

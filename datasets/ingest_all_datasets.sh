@@ -13,20 +13,29 @@
 # limitations under the License.
 
 #!/bin/bash
-datasets=("nemo" "heq" "hesum" "hesentiment" "hebnli")
+datasets=(
+    # Hebrew
+    "nemo" "heq" "heq_question_gen" "hesum" "hesentiment" "hebnli" "hebsummaries" "hebco"
+    # MSA
+    "artydiqa" "artydiqa_question_gen" "arq_MSA" "arq_MSA_question_gen" "iahlt_ner"
+    # Levantine Arabic
+    "arq_spoken"  "arq_spoken_question_gen"  "arcoref" "arsentiment"
+    )
+
+
 save_tfrecord=$1
 
 
-for dataset in "${datasets[@]}"; do 
+for dataset in "${datasets[@]}"; do
     echo "${dataset}"
+    args=(--dataset "$dataset")
     if [[ "$save_tfrecord" = "save_tfrecord" ]]; then
-        python -m mrl_eval.datasets.ingest_dataset --dataset "$dataset" --save_tfrecord
-    else
-        python -m mrl_eval.datasets.ingest_dataset --dataset "$dataset"
+        args+=(--save_tfrecord);
     fi
+    python -m mrl_eval.datasets.ingest_dataset "${args[@]}"
 
-    if [[ $? -ne 0 ]]; then 
+    if [[ $? -ne 0 ]]; then
         echo "Error occurred while ingesting dataset: $dataset"
-        exit 1 
+        exit 1
     fi
 done

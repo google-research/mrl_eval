@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Preprocessing the NEMO dataset and writing to the storage.
+"""Preprocessing the NEMO dataset and writing it to storage.
 
 Paper: https://arxiv.org/pdf/2007.15620.pdf
 Nemo is a morphologically aware NER dataset with the following entity types:
@@ -35,9 +35,9 @@ Input: Ani meYisrael (I am from Israel)
 The named entities in this sentence are: [GPE: Yisrael]
 """
 
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping, Sequence
 import pathlib
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Union
 
 import immutabledict
 import tensorflow as tf
@@ -46,11 +46,11 @@ from mrl_eval.datasets import constants
 from mrl_eval.datasets import dataset_lib
 from mrl_eval.evaluation import metrics
 
-Tokens = List[str]
+Tokens = list[str]
 Tag = str
-Tags = List[Tag]
-RawExample = Dict[str, Union[int, str, Tokens, Tags]]
-FeatureMap = Dict[str, tf.train.Feature]
+Tags = list[Tag]
+RawExample = dict[str, Union[int, str, Tokens, Tags]]
+FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 ENTITIES_SEQ_SEPARATOR = "$$"
@@ -173,8 +173,14 @@ class Nemo(dataset_lib.Dataset):
           ],
       }
 
-  def _get_target(self, example):
+  def get_inputs(self, example):
+    return example["inputs"]
+
+  def get_outputs(self, example):
     return example[f"targets_as_entity_markers_{self._level}_level"]
+
+  def get_example_id(self, example):
+    return example["id"]
 
   def process_raw_examples(self, raw_dataset):
     dataset = []

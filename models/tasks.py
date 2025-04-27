@@ -15,7 +15,9 @@
 
 """Tasks for fine-tuning T5 using T5X."""
 
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence
+from collections.abc import Callable, Mapping, Sequence
+import functools
+from typing import Any
 
 from immutabledict import immutabledict
 import seqio
@@ -23,16 +25,24 @@ import tensorflow as tf
 import tensorflow.compat.v2 as tf_c2
 
 from mrl_eval.datasets import constants
+from mrl_eval.datasets.arcoref import arcoref_lib
+from mrl_eval.datasets.arq import arq_lib
+from mrl_eval.datasets.arsentiment import arsentiment_lib
+from mrl_eval.datasets.artydiqa import artydiqa_lib
+from mrl_eval.datasets.hebco import hebco_lib
 from mrl_eval.datasets.hebnli import hebnli_lib
+from mrl_eval.datasets.hebsummaries import hebsummaries_lib
 from mrl_eval.datasets.heq import heq_lib
 from mrl_eval.datasets.hesentiment import hesentiment_lib
 from mrl_eval.datasets.hesum import hesum_lib
+from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
 from mrl_eval.datasets.nemo import nemo_lib
+
 
 
 TaskRegistry = seqio.TaskRegistry
 TaskProcessors = Sequence[
-    Callable[[Dict[str, tf.Tensor]], Dict[str, tf.Tensor]]
+    Callable[[dict[str, tf.Tensor]], dict[str, tf.Tensor]]
 ]
 
 _MODEL_MT5 = "mt5"
@@ -50,10 +60,21 @@ DEFAULT_PREPROCESSORS = (
     seqio.preprocessors.append_eos_after_trim,
 )
 
+HE_ANSWER_PROMPT = "תשובה:"
+HE_CONTEXT_PROMPT = "הקשר:"
+HE_QUESTION_PROMPT = "שאלה:"
+HE_FIRST_SENTENCE_PROMPT = "משפט 1:"
+HE_SECOND_SENTENCE_PROMPT = "משפט 2:"
+AR_ANSWER_PROMPT = "الجواب:"
+AR_QUESTION_PROMPT = "السؤال:"
+AR_CONTEXT_PROMPT = "النص:"
+AR_PREMISE_PROMPT = "مقدمة:"
+AR_HYPOTHESIS_PROMPT = "فرضية:"
+
 
 def postprocess_qa(
-    answer, example = None, is_target = False
-):
+    answer: Any, example: Any = None, is_target: bool = False
+) -> Any:
   """Returns answer, or all answers if the full example is provided."""
   if is_target:
     return [tf_c2.compat.as_text(a) for a in example["answers"]]
@@ -61,7 +82,7 @@ def postprocess_qa(
 
 
 @seqio.map_over_dataset
-def convert_to_squad_format(example):
+def convert_to_squad_format(example: Mapping[str, Any]) -> Mapping[str, Any]:
   """Converts example to the SQuAD format expected in squad preprocessing."""
   return {
       "id": example["id"],
@@ -76,8 +97,8 @@ def convert_to_squad_format(example):
 
 
 def get_tasks_values(
-    input_key = "input", target_key = "target"
-):
+    input_key: str = "input", target_key: str = "target"
+) -> Callable[[Mapping[str, Any]], Mapping[str, Any]]:
   """Returns a function that takes the relevant tasks values from example.
 
   Args:
@@ -89,7 +110,7 @@ def get_tasks_values(
   """
 
   @seqio.map_over_dataset
-  def fn(ex):
+  def fn(ex: Mapping[str, Any]) -> Mapping[str, Any]:
     return {
         "id": ex["id"],
         "inputs": ex[input_key],
@@ -106,7 +127,7 @@ def _string_join(lst):
 
 
 @seqio.map_over_dataset
-def preprocess_hebnli(example):
+def preprocess_hebnli(example: Mapping[str, Any]) -> Mapping[str, Any]:
   """Convert HebNLI examples to a text2text pair.
 
   HebNLI produces examples with this form:
@@ -125,7 +146,12 @@ def preprocess_hebnli(example):
   """
   sentence1 = example[hebnli_lib.HebNLI.HEB_FIRST_SENT_NAME]
   sentence2 = example[hebnli_lib.HebNLI.HEB_SECOND_SENT_NAME]
-  inputs = _string_join(["משפט 1:", sentence1, "משפט 2:", sentence2])
+  inputs = _string_join([
+      HE_FIRST_SENTENCE_PROMPT,
+      sentence1,
+      HE_SECOND_SENTENCE_PROMPT,
+      sentence2,
+  ])
   return {
       "id": example["id"],
       "inputs": inputs,
@@ -133,8 +159,12 @@ def preprocess_hebnli(example):
   }
 
 
+
+
 @seqio.map_over_dataset
-def preprocess_qa(example):
+def preprocess_qa(
+    example: Mapping[str, Any], question_prompt: str, context_prompt: str
+) -> Mapping[str, Any]:
   """Convert SQuAD examples to a text2text pair.
 
   SQuAD produces examples with this form:
@@ -148,6 +178,10 @@ def preprocess_qa(example):
 
   Args:
     example: an example to process.
+    question_prompt: Text to prepend to the question to indicate that it's a
+      question.
+    context_prompt: Text to prepend to the context to indicate that it's a
+      context.
 
   Returns:
     A preprocessed example with the format listed above.
@@ -155,7 +189,7 @@ def preprocess_qa(example):
   answers = example["answers"]["text"]
   question = example["question"]
   context = example["context"]
-  inputs = _string_join(["שאלה:", question, "הקשר:", context])
+  inputs = _string_join([question_prompt, question, context_prompt, context])
   return {
       "inputs": inputs,
       "targets": answers[0],
@@ -168,8 +202,10 @@ def preprocess_qa(example):
 
 @seqio.map_over_dataset
 def preprocess_question_generation(
-    example,
-):
+    example: Mapping[str, Any],
+    answer_prompt: str,
+    context_prompt: str,
+) -> Mapping[str, Any]:
   """Convert SQuAD examples to a text2text pair.
 
   Following: https://arxiv.org/abs/2011.11928
@@ -184,6 +220,10 @@ def preprocess_question_generation(
 
   Args:
     example: an example to process.
+    answer_prompt: Text to prepend to the answer to indicate that it's an
+      answer.
+    context_prompt: Text to prepend to the context to indicate that it's a
+      context.
 
   Returns:
     A preprocessed example with the format listed above.
@@ -191,7 +231,7 @@ def preprocess_question_generation(
   answers = example["answers"]["text"]
   question = example["question"]
   context = example["context"]
-  inputs = _string_join(["תשובה:", answers[0], "הקשר:", context])
+  inputs = _string_join([answer_prompt, answers[0], context_prompt, context])
   return {
       "inputs": inputs,
       "targets": question,
@@ -203,12 +243,15 @@ def preprocess_question_generation(
 
 
 def _register_heq(
-    model_name,
-    task_name,
-    processor_func,
-    postprocessor_func,
-):
+    model_name: str,
+    task_name: str,
+    processor_func: Callable[[Mapping[str, str]], Mapping[str, str]],
+    postprocessor_func: Callable[[Mapping[str, str]], Mapping[str, str]] | None,
+) -> None:
   """Register Heq."""
+  if not model_name:
+    raise ValueError("No model name provided")
+
   if task_name == constants.HEQ:
     dataset = heq_lib.HeQ()
   elif task_name == constants.HEQ_QUESTION_GEN:
@@ -216,11 +259,8 @@ def _register_heq(
   else:
     raise ValueError(f"Unknown task name: {task_name}")
 
-  if model_name:
-    task_name = f"{task_name}_{model_name}"
+  task_name = f"{task_name}_{model_name}"
 
-  else:
-    raise ValueError(f"Unknown task name: {task_name}")
   TaskRegistry.add(
       name=task_name,
       source=seqio.TFExampleDataSource(
@@ -243,30 +283,38 @@ def _register_heq(
   )
 
 
-def register_heq(model_name):
+def register_heq(model_name: str):
   """Register Heq."""
 
   _register_heq(
       model_name,
       constants.HEQ,
-      preprocess_qa,
+      functools.partial(
+          preprocess_qa,
+          question_prompt=HE_QUESTION_PROMPT,
+          context_prompt=HE_CONTEXT_PROMPT,
+      ),
       postprocess_qa,
   )
   _register_heq(
       model_name,
       constants.HEQ_QUESTION_GEN,
-      preprocess_question_generation,
+      functools.partial(
+          preprocess_question_generation,
+          answer_prompt=HE_ANSWER_PROMPT,
+          context_prompt=HE_CONTEXT_PROMPT,
+      ),
       None,
   )
 
 
-def register_nemo(model_name):
+def register_nemo(model_name: str):
   """Register Nemo."""
   for level in ["token", "morph"]:
     _register_nemo(model_name, level)
 
 
-def _register_nemo(model_name, level):
+def _register_nemo(model_name: str, level: str) -> None:
   """Register Nemo task for the different dataset formulations."""
   targets_feature_name = f"targets_as_entity_markers_{level}_level"
   task_name = f"{constants.NEMO}_{targets_feature_name}_{model_name}"
@@ -294,7 +342,7 @@ def _register_nemo(model_name, level):
   )
 
 
-def register_hebnli(model_name):
+def register_hebnli(model_name: str):
   """Register Hebnli."""
   task_name = constants.HEBNLI
   if model_name:
@@ -318,7 +366,9 @@ def register_hebnli(model_name):
   )
 
 
-def register_hesentiment(model_name):
+
+
+def register_hesentiment(model_name: str):
   """Register he_sentiment."""
   task_name = constants.HESENTIMENT
   if model_name:
@@ -345,8 +395,8 @@ def register_hesentiment(model_name):
   )
 
 
-def register_hesum(model_name):
-  """Register he_sentiment."""
+def register_hesum(model_name: str):
+  """Register he_sum."""
   task_name = constants.HESUM
   if model_name:
     task_name = f"{task_name}_{model_name}"
@@ -372,6 +422,286 @@ def register_hesum(model_name):
   )
 
 
+
+
+def register_hebsummaries(model_name: str) -> None:
+  """Register HebSummaries."""
+  if model_name:
+    task_name = f"{constants.HEBSUMMARIES}_{model_name}"
+  else:
+    task_name = constants.HEBSUMMARIES
+
+  dataset = hebsummaries_lib.HebSummaries()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.ARTICLE, dataset.SUMMARY),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
+
+def _register_artydiqa(
+    model_name: str,
+    task_name: str,
+    processor_func: Callable[[Mapping[str, str]], Mapping[str, str]],
+    postprocessor_func: Callable[[Mapping[str, str]], Mapping[str, str]] | None,
+) -> None:
+  """Register ArTyDiQA."""
+  if not model_name:
+    raise ValueError("No model name provided")
+
+  if task_name == constants.ARTYDIQA:
+    dataset = artydiqa_lib.ArTyDiQA()
+  elif task_name == constants.ARTYDIQA_QUESTION_GEN:
+    dataset = artydiqa_lib.ArTyDiQAQuestionGen()
+  else:
+    raise ValueError(f"Unknown task name: {task_name}")
+
+  task_name = f"{task_name}_{model_name}"
+
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          convert_to_squad_format,
+          processor_func,
+          *DEFAULT_PREPROCESSORS,
+      ],
+      postprocess_fn=postprocessor_func,
+      metric_fns=dataset.metrics,
+  )
+
+
+def register_artydiqa(model_name: str) -> None:
+  """Register AraTyDiQA."""
+
+  _register_artydiqa(
+      model_name,
+      constants.ARTYDIQA,
+      functools.partial(
+          preprocess_qa,
+          question_prompt=AR_QUESTION_PROMPT,
+          context_prompt=AR_CONTEXT_PROMPT,
+      ),
+      postprocess_qa,
+  )
+
+  _register_artydiqa(
+      model_name,
+      constants.ARTYDIQA_QUESTION_GEN,
+      functools.partial(
+          preprocess_question_generation,
+          answer_prompt=AR_ANSWER_PROMPT,
+          context_prompt=AR_CONTEXT_PROMPT,
+      ),
+      None,
+  )
+
+
+def register_arsentiment(model_name: str):
+  """Register arsentiment."""
+  task_name = constants.ARSENTIMENT
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = arsentiment_lib.ArSentiment()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.TEXT_KEY, dataset.LABEL_KEY),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
+
+def _register_arq(
+    model_name: str,
+    task_name: str,
+    processor_func: Callable[[Mapping[str, str]], Mapping[str, str]],
+    postprocessor_func: Callable[[Mapping[str, str]], Mapping[str, str]] | None,
+) -> None:
+  """Register ArQ."""
+  if not model_name:
+    raise ValueError("No model name provided")
+
+  match task_name:
+    case constants.ARQ_SPOKEN:
+      dataset = arq_lib.ArQ("spoken")
+    case constants.ARQ_MSA:
+      dataset = arq_lib.ArQ("MSA")
+    case constants.ARQ_SPOKEN_QUESTION_GEN:
+      dataset = arq_lib.ArQQuestionGen("spoken")
+    case constants.ARQ_MSA_QUESTION_GEN:
+      dataset = arq_lib.ArQQuestionGen("MSA")
+    case _:
+      raise ValueError(f"Unknown task name: {task_name}")
+
+  task_name = f"{task_name}_{model_name}"
+
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          convert_to_squad_format,
+          processor_func,
+          *DEFAULT_PREPROCESSORS,
+      ],
+      postprocess_fn=postprocessor_func,
+      metric_fns=dataset.metrics,
+  )
+
+
+def register_arq(model_name: str) -> None:
+  """Register ArQ."""
+
+  for task in (constants.ARQ_SPOKEN, constants.ARQ_MSA):
+    _register_arq(
+        model_name,
+        task,
+        functools.partial(
+            preprocess_qa,
+            question_prompt=AR_QUESTION_PROMPT,
+            context_prompt=AR_CONTEXT_PROMPT,
+        ),
+        postprocess_qa,
+    )
+
+  for task in (
+      constants.ARQ_SPOKEN_QUESTION_GEN,
+      constants.ARQ_MSA_QUESTION_GEN,
+  ):
+    _register_arq(
+        model_name,
+        task,
+        functools.partial(
+            preprocess_question_generation,
+            answer_prompt=AR_ANSWER_PROMPT,
+            context_prompt=AR_CONTEXT_PROMPT,
+        ),
+        None,
+    )
+
+
+def register_hebco(model_name: str):
+  """Register HebCo."""
+  task_name = constants.HEBCO
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = hebco_lib.Hebco(index_text=True, index_targets=True)
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.TEXT_FIELD, dataset.TARGET_FIELD),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
+
+def register_arcoref(model_name: str):
+  """Register ArCoref."""
+  task_name = constants.ARCOREF
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = arcoref_lib.ArCoref(index_text=True, index_targets=True)
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.TEXT_FIELD, dataset.TARGET_FIELD),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
+
+def register_iahlt_ner(model_name: str) -> None:
+  """Register IAHLT NER."""
+  task_name = f"{constants.IAHLT_NER}_{model_name}"
+
+  dataset = iahlt_ner_lib.IahltNer()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.TEXT_KEY, dataset.LABEL_KEY),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
+
 # Register all tasks variants
 ALL_TASKS = [
     register_heq,
@@ -379,6 +709,13 @@ ALL_TASKS = [
     register_hebnli,
     register_hesentiment,
     register_hesum,
+    register_arsentiment,
+    register_artydiqa,
+    register_arq,
+    register_hebco,
+    register_arcoref,
+    register_iahlt_ner,
+    register_hebsummaries,
 ]
 for register_task in ALL_TASKS:
   register_task(_MODEL_MT5)

@@ -27,13 +27,7 @@ from mrl_eval.datasets import dataset_factory
 _DATASET = flags.DEFINE_enum(
     "dataset",
     None,
-    [
-        constants.NEMO,
-        constants.HEQ,
-        constants.HEBNLI,
-        constants.HESENTIMENT,
-        constants.HESUM,
-    ],
+    constants.DATASETS,
     "The dataset you'd like to ingest.",
 )
 
@@ -43,12 +37,25 @@ _SAVE_TFRECORD = flags.DEFINE_bool(
     "If true, saves the data in tfrecords format in addition to jsonl.",
 )
 
+_SPLIT_DEV_FROM_TRAIN = flags.DEFINE_bool(
+    "split_dev_from_train",
+    False,
+    "Whether to split dev from train before ingestion. Should be applied only"
+    " to datasets without an official dev set. Currently only supported for"
+    " HeSentiment and HebNLI.",
+)
+
 
 def main(argv):
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
 
   dataset = dataset_factory.dataset_factory(_DATASET.value)
+
+  if _SPLIT_DEV_FROM_TRAIN.value:
+    print("Splitting dev from train")
+    dataset.split_dev_from_train()
+
   dataset.preprocess_dataset(_SAVE_TFRECORD.value)
 
 

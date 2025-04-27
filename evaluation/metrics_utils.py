@@ -16,19 +16,23 @@
 """Utility functions for calculating metrics for text generation."""
 
 import collections
+from collections.abc import Callable, Sequence
 import re
 import string
-from typing import Callable, List, Sequence, Tuple, Union
+from typing import Union
+
 import Levenshtein
 import numpy as np
+from scipy import optimize
+
 
 Tag = str
 Entity = str
-TaggedEntities = List[Tuple[Tag, Entity]]
+TaggedEntities = list[tuple[Tag, Entity]]
 
-WordLabels = List[str]
-SentenceLabels = List[WordLabels]
-DatasetLabels = List[SentenceLabels]
+WordLabels = list[str]
+SentenceLabels = list[WordLabels]
+DatasetLabels = list[SentenceLabels]
 
 
 def _normalize_answer(text, punc_chars, punc_repl):
@@ -70,7 +74,7 @@ def _metric_max_over_ground_truths(
   return max(metric_fn(ground_truth, prediction) for ground_truth in targets)
 
 
-def _average_max_over_ground_truths(
+def average_max_over_ground_truths(
     targets,
     predictions,
     metric_fn,
@@ -111,13 +115,13 @@ def _f1_score(target, prediction):
 def f1_multi_targets(
     targets, predictions
 ):
-  return _average_max_over_ground_truths(targets, predictions, _f1_score)
+  return average_max_over_ground_truths(targets, predictions, _f1_score)
 
 
 def em_multi_targets(
     targets, predictions
 ):
-  return _average_max_over_ground_truths(
+  return average_max_over_ground_truths(
       targets, predictions, _exact_match_score
   )
 
@@ -128,7 +132,7 @@ def _levenshtein_norm(text1, text2):
   return float(distance) / max(len(text1), len(text2))
 
 
-def _tlnls_single_prediction(target, prediction):
+def tlnls_single_prediction(target, prediction):
   """Computes the token-level normalized Levenshtein similarity."""
   target_tokens = _split_to_squad_tokens(target)
   prediction_tokens = _split_to_squad_tokens(prediction)
@@ -146,7 +150,9 @@ def _tlnls_single_prediction(target, prediction):
 
 
 def tlnls_calc(
-    targets, predictions
+    targets,
+    predictions,
+    null_answer_text = None,
 ):
   """Computes the token-level normalized Levenshtein similarity."""
 
@@ -156,10 +162,31 @@ def tlnls_calc(
 
   score = 0
   for target_options, prediction in zip(targets, predictions):
-    if _is_half_or_more_digits(prediction):
+
+    has_null_answer_text = null_answer_text is not None
+    prediction_is_null = has_null_answer_text and prediction == null_answer_text
+    any_target_is_null = has_null_answer_text and any(
+        t == null_answer_text for t in target_options
+    )
+
+    prediction_is_half_digits = _is_half_or_more_digits(prediction)
+    any_target_is_half_digits = any(
+        _is_half_or_more_digits(t) for t in target_options
+    )
+
+    if prediction_is_null or any_target_is_null:
+      single_prediction_metric_fn = _exact_match_score
+      # This is in order to be consistent with SQuAD 2.0 evaluation:
+      # "For negative examples, abstaining receives a score of 1, and any other
+      # response gets 0, for both exact match and F1."
+      # (https://arxiv.org/pdf/1806.03822, foonote 3)
+      # Since unlike in SQuAD 2.0, abstaining is represented here by the null
+      # answer text (and not by an empty string), this is extended
+      # to cases where the prediction is the null answer text, too.
+    elif prediction_is_half_digits or any_target_is_half_digits:
       single_prediction_metric_fn = _f1_score
     else:
-      single_prediction_metric_fn = _tlnls_single_prediction
+      single_prediction_metric_fn = tlnls_single_prediction
 
     score += _metric_max_over_ground_truths(
         target_options, prediction, single_prediction_metric_fn
@@ -303,3 +330,106 @@ def entity_markers_to_spans(tag_sequence):
 def _text_between_brackets(tag_sequence):
   pattern = r"\[(.*?)\]"
   return re.findall(pattern, tag_sequence)
+
+
+def cluster_similarity(
+    cluster1,
+    cluster2,
+    similarity_fn,
+):
+  """Calculates the cluster similarity between two lists of strings."""
+  set1 = collections.Counter(cluster1)
+  set2 = collections.Counter(cluster2)
+  return similarity_fn(set1, set2)
+
+
+def _iou(
+    set1, set2
+):
+  intersection = sum((set1 & set2).values())
+  union = sum((set1 | set2).values())
+  return intersection / union if union != 0 else 0.0
+
+
+def average_score_match_clusters(
+    gold_clusters,
+    predicted_clusters,
+    similarity_fn = _iou,
+):
+  """Matches clusters using the Hungarian algorithm.
+
+  https://en.wikipedia.org/wiki/Hungarian_algorithm.
+
+  Args:
+    gold_clusters: list of gold user annotated entity clusters
+    predicted_clusters: list of predicted entity clusters
+    similarity_fn: similarity function between two sets of strings
+
+  Returns:
+    list of matched clusters (gold, predicted)
+  """
+  # similarity matrix where entry [i, j] is the similarity between
+  # gold_clusters[i] and predicted_clusters[j]:
+  num_gold = len(gold_clusters)
+  num_pred = len(predicted_clusters)
+
+  max_size = max(num_gold, num_pred)
+  similarity_matrix = np.zeros((max_size, max_size))
+
+  for i, gold_cluster in enumerate(gold_clusters):
+    for j, pred_cluster in enumerate(predicted_clusters):
+      similarity_matrix[i, j] = cluster_similarity(
+          gold_cluster, pred_cluster, similarity_fn
+      )
+
+  # maximize the total similarity:
+  row_indices, col_indices = optimize.linear_sum_assignment(-similarity_matrix)
+  matched_clusters = []
+  for row, col in zip(row_indices, col_indices):
+    gold_cluster = gold_clusters[row] if row < num_gold else []
+    pred_cluster = predicted_clusters[col] if col < num_pred else []
+    matched_clusters.append((gold_cluster, pred_cluster))
+
+  return matched_clusters
+
+
+def exactly_comparing_clusters(
+    target_cluster, predicted_cluster
+):
+  """Calculates the true positives, false positives and false negatives for a given cluster prediction using exact matching."""
+  set_gold = collections.Counter(target_cluster)
+  set_pred = collections.Counter(predicted_cluster)
+  tp = sum((set_gold & set_pred).values())
+  fp = sum((set_pred - set_gold).values())
+  fn = sum((set_gold - set_pred).values())
+  return tp, fn, fp
+
+
+def macro_f1_for_matching_clusters(
+    parsed_clusters_pairs,
+    comparing_fn,
+):
+  """Computes the macro f1 score for a list of matching clusters."""
+  global_tp = 0
+  global_fn = 0
+  global_fp = 0
+  for target_cluster, predicted_cluster in parsed_clusters_pairs:
+    tp, fn, fp = comparing_fn(target_cluster, predicted_cluster)
+    global_tp += tp
+    global_fn += fn
+    global_fp += fp
+  if global_tp == 0:
+    macro_f1 = 0
+  else:
+    precision = (
+        global_tp / (global_tp + global_fp) if global_tp + global_fp > 0 else 0
+    )
+    recall = (
+        global_tp / (global_tp + global_fn) if global_tp + global_fn > 0 else 0
+    )
+    if precision + recall > 0:
+      macro_f1 = 2 * (precision * recall) / (precision + recall)
+    else:
+      macro_f1 = 0
+
+  return macro_f1 * 100

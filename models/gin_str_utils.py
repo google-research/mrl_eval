@@ -14,8 +14,6 @@
 # limitations under the License.
 
 """Utility functions for simple operations (convert, concat) in gin."""
-
-from typing import List
 import gin
 
 

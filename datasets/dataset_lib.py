@@ -20,10 +20,10 @@ child classes, usually using a factory.
 """
 
 import abc
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 import os
 import pathlib
-from typing import Any, Dict, Iterable
+from typing import Any
 
 import tensorflow as tf
 
@@ -39,7 +39,7 @@ FeatureMap = Any
 RawDataset = list[RawExample]
 SerializedExample = bytes
 MetricsScores = Any
-MetricsFn = Callable[[list[Any], list[Any]], Dict[str, float]]
+MetricsFn = Callable[[list[Any], list[Any]], dict[str, float]]
 
 logger = tf.get_logger()
 
@@ -50,7 +50,7 @@ class Dataset(abc.ABC):
   This class defines the Dataset class functionalities:
   - Read/Write functionalities.
   - Ingests functionalities - converting  into specific formats (such as
-    TFRecords or JSONL) and then writing them to the storage disk.
+    TFRecords or JSONL) and then writing them to Disk.
   - Evaluation functionalities.
   """
 
@@ -131,7 +131,7 @@ class Dataset(abc.ABC):
     # Get gold targets for every example id
     gold_examples = {}
     for example in dataset:
-      gold_examples[example["id"]] = self._get_target(example)
+      gold_examples[example["id"]] = self.get_outputs(example)
 
     return gold_examples
 
@@ -145,11 +145,6 @@ class Dataset(abc.ABC):
     Returns:
       A list of dictionaries of all relevant dataset example attributes.
     """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def _get_target(self, example):
-    """Gets the target or targets of a given example."""
     raise NotImplementedError()
 
   @property
@@ -173,13 +168,27 @@ class Dataset(abc.ABC):
   def dataset_name(self):
     raise NotImplementedError()
 
+  @abc.abstractmethod
+  def get_inputs(self, example):
+    """Returns the input to give to the model for a given example."""
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def get_outputs(self, example):
+    """Returns the expected response for a given example."""
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def get_example_id(self, example):
+    raise NotImplementedError()
+
   @property
   def dataset_dir(self):
     """Returns the directory of the raw files.
 
     This directory is used both for reading input files and for storing the
     output files in a subfolder of this directory.
-    e.g. this method returns pathlib.Path("cns/dataset/location").
+    e.g. this method returns pathlib.Path("dataset/location").
     """
     return pathlib.Path(constants.BASE_PATH) / self.dataset_name
 
@@ -202,3 +211,6 @@ class Dataset(abc.ABC):
     """
     raise NotImplementedError()
 
+  def split_dev_from_train(self):
+    """Splits the train file into train and dev files."""
+    raise NotImplementedError()
