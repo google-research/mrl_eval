@@ -1,4 +1,4 @@
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@ datasets=(
     # Hebrew
     "nemo" "heq" "heq_question_gen" "hesum" "hesentiment" "hebnli" "hebsummaries" "hebco"
     # MSA
-    "artydiqa" "artydiqa_question_gen" "arq_MSA" "arq_MSA_question_gen" "iahlt_ner"
+    "artydiqa" "artydiqa_question_gen" "arq_MSA" "arq_MSA_question_gen" "iahlt_ner" "arabic_nli" "ar_xlsum"
     # Levantine Arabic
     "arq_spoken"  "arq_spoken_question_gen"  "arcoref" "arsentiment"
     )
-
 
 save_tfrecord=$1
 

@@ -36,6 +36,8 @@ The following tasks are supported:
 | Modern Standard Arabic | ArTyDiQA-QA        | Question Answering         | TyDiQA-F1     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
 | Modern Standard Arabic | ArTyDiQA-QG        | Question Generation        | Rouge     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
 | Modern Standard Arabic | IAHLT-NER          | Named Entity Recognition                        | F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/arabic-iahlt-NER)                                  |
+| Modern Standard Arabic | ArXLSum          | Summarization                        | Rouge        | [Page](https://huggingface.co/datasets/csebuetnlp/xlsum)                                  |
+| Modern Standard Arabic | ArabicNLI         | Natural Language Inference                       | Macro F1        | [Page](https://huggingface.co/datasets/facebook/xnli)                                  |
 | &nbsp;                       |                    |                            |            
 | Levantine Arabic       | ArSentiment        | Sentiment Analysis         | Macro F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArabicSentimentDataSet)                            |
 | Levantine Arabic       | ArCoref            | Coreference                | Macro F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArabCoRef)                                          |
@@ -87,6 +89,7 @@ The options for `dataset` are:
 *   nemo_morph
 *   hebnli
 *   hebco
+*   arabic_nli
 *   arq_MSA
 *   arq_MSA_question_gen
 *   arq_spoken
@@ -95,6 +98,7 @@ The options for `dataset` are:
 *   arcoref
 *   artydiqa
 *   artydiqa_question_gen
+*   ar_xlsum
 *   iahlt_ner
 
 Your predictions file is expected to be a jsonl file in the following format:
@@ -123,9 +127,11 @@ the table below.
 | &nbsp;                 |         |                  |                  |                     |
 | Modern Standard Arabic | mT5-XL  | ArQ-MSA-QA       | TLNLS            | 79.5                |
 | Modern Standard Arabic | mT5-XL  | ArQ-MSA-QG       | R1/R2/RL         | 35.8 / 17.2 / 35.5  |
-| Modern Standard Arabic | mT5-XL  | ArTyDi-QA        | TyDiQA-F1            | 87.4                |
+| Modern Standard Arabic | mT5-XL  | ArTyDi-QA        | TyDiQA-F1            | 87.4            |
 | Modern Standard Arabic | mT5-XL  | ArTyDi-QG        | R1/R2/RL         | 60.6 / 44.1 / 60.5  |
 | Modern Standard Arabic | mT5-XL  | IAHLT-NER        | Token F1         | 64.6                |
+| Modern Standard Arabic | mT5-XL  | ArabicNLI        | Macro F1         |  82.2 |
+| Modern Standard Arabic | mT5-XL  | ArXLSum          | R1/R2/RL         | 26.5 / 11.4 / 23.4  |
 | &nbsp;                 |         |                  |                  |                     |
 | Levantine Arabic       | mT5-XL  | ArSentiment      | Macro F1         | 71.2                |
 | Levantine Arabic       | mT5-XL  | ArCoref          | Macro F1         | 50.1                |

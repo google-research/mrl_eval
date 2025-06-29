@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 
 """Preprocessing the TyDiQA dataset and writing it to storage."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 import functools
 import pathlib
-from typing import Any, Callable
+from typing import Any
 
 import immutabledict
 import tensorflow as tf

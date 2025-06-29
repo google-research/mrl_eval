@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -75,7 +75,10 @@ def hf_dataset_factory(
       return hf_datasets.HfIahltNer(data_args, tokenizer, for_decoder_only)
     case constants.HEBSUMMARIES:
       return hf_datasets.HfHebSummaries(data_args, tokenizer, for_decoder_only)
-
+    case constants.ARABIC_NLI:
+      return hf_datasets.HfArabicNLI(data_args, tokenizer, for_decoder_only)
+    case constants.AR_XLSUM:
+      return hf_datasets.HfArXLSum(data_args, tokenizer, for_decoder_only)
 
     case _:
       raise ValueError(f"Dataset {dataset_name} is not defined.")

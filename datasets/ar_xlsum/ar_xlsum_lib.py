@@ -16,7 +16,6 @@
 """Preprocessing the HeSum dataset and writing it to storage."""
 
 from collections.abc import Callable, Mapping, Sequence
-import copy
 import pathlib
 from typing import Any
 
@@ -34,22 +33,27 @@ FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 
-class HeSum(dataset_lib.SummarizationDataset):
-  """Implementation of the Dataset class for the HeSum dataset.
+class ArXLSum(dataset_lib.SummarizationDataset):
+  """Implementation of the Dataset class for the Arabic XLSum dataset.
 
   This class transforms from raw dataset files into TensorFlow records.
   """
 
-  article = "article"
+  article = "text"
   summary = "summary"
+  ID = "id"
 
   @property
   def dataset_name(self):
-    return constants.HESUM
+    return constants.AR_XLSUM
 
   @property
   def raw_files(self):
-    return {"train": "train.csv", "val": "validation.csv", "test": "test.csv"}
+    return {
+        "train": "arabic_train.jsonl",
+        "val": "arabic_val.jsonl",
+        "test": "arabic_test.jsonl",
+    }
 
   @property
   def metrics(self):
@@ -85,8 +89,8 @@ class HeSum(dataset_lib.SummarizationDataset):
       A list of examples, where each example is a dictionary mapping feature
       names to values.
     """
-    df = io_utils.read_csv(file_path)
-    return df.to_dict("records")
+    data = io_utils.read_jsonl(file_path)
+    return data
 
   def get_inputs(self, example):
     return example[self.article]
@@ -95,15 +99,7 @@ class HeSum(dataset_lib.SummarizationDataset):
     return example[self.summary]
 
   def get_example_id(self, example):
-    return example["id"]
-
-  def _add_example_ids(self, dataset):
-    dataset_with_ids = []
-    for i, raw_example in enumerate(dataset):
-      example = copy.deepcopy(raw_example)
-      example["id"] = f"hs_{i}"
-      dataset_with_ids.append(example)
-    return dataset_with_ids
+    return example[self.ID]
 
   def process_raw_examples(self, dataset):
-    return self._add_example_ids(dataset)
+    return dataset

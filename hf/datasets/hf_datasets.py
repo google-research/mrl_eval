@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import re
 from typing import TypeAlias
 
 from mrl_eval.datasets import constants
+from mrl_eval.datasets.ar_xlsum import ar_xlsum_lib
+from mrl_eval.datasets.arabic_nli import arabic_nli_lib
 from mrl_eval.datasets.arcoref import arcoref_lib
 from mrl_eval.datasets.artydiqa import artydiqa_lib
 from mrl_eval.datasets.hebco import hebco_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
 from mrl_eval.evaluation import metrics
 from mrl_eval.hf.datasets import hf_datasets_lib
-
 
 _AR_ANSWER_PROMPT = "الجواب:"
 _AR_QUESTION_PROMPT = "السؤال:"
@@ -505,3 +506,47 @@ class HfIahltNer(hf_datasets_lib.HfDataset):
     return [metrics.token_level_span_f1]
 
 
+class HfArabicNLI(hf_datasets_lib.HfDataset):
+  """Arabic NLI dataset."""
+
+  def _preprocess_example(self, sample):
+    premise = sample[arabic_nli_lib.PREMISE_KEY]
+    hypothesis = sample[arabic_nli_lib.HYPOTHESIS_KEY]
+    inputs = _string_join(
+        [_AR_NLI_PREMISE_PROMPT, premise, _AR_NLI_HYPOTHESIS_PROMPT, hypothesis]
+    )
+    return {
+        "id": sample["id"],
+        "inputs": inputs,
+        "targets": sample[arabic_nli_lib.LABEL_KEY],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.ARABIC_NLI
+
+  def metrics(self):
+    return [
+        metrics.accuracy,
+        metrics.get_macro_f1_fn(
+            list(arabic_nli_lib.LABEL_TRANSLATIONS.values())
+        ),
+    ]
+
+
+class HfArXLSum(hf_datasets_lib.HfDataset):
+  """Arabic summarization dataset."""
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[ar_xlsum_lib.ArXLSum.ID],
+        "inputs": sample[ar_xlsum_lib.ArXLSum.article],
+        "targets": sample[ar_xlsum_lib.ArXLSum.summary],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.AR_XLSUM
+
+  def metrics(self):
+    return [metrics.rouge]

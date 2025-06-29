@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 from mrl_eval.datasets import constants
 from mrl_eval.datasets import dataset_lib
+from mrl_eval.datasets.ar_xlsum import ar_xlsum_lib
+from mrl_eval.datasets.arabic_nli import arabic_nli_lib
 from mrl_eval.datasets.arcoref import arcoref_lib
 from mrl_eval.datasets.arq import arq_lib
 from mrl_eval.datasets.arsentiment import arsentiment_lib
@@ -29,7 +31,6 @@ from mrl_eval.datasets.hesentiment import hesentiment_lib
 from mrl_eval.datasets.hesum import hesum_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
 from mrl_eval.datasets.nemo import nemo_lib
-
 
 
 def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
@@ -73,7 +74,10 @@ def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
       return iahlt_ner_lib.IahltNer()
     case constants.HEBSUMMARIES:
       return hebsummaries_lib.HebSummaries()
-
+    case constants.ARABIC_NLI:
+      return arabic_nli_lib.ArabicNLI()
+    case constants.AR_XLSUM:
+      return ar_xlsum_lib.ArXLSum()
 
     case _:
       raise ValueError(f"Dataset {dataset_name} is not defined.")

@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ FeatureMap = dict[str, tf.train.Feature]
 RawDataset = dataset_lib.RawDataset
 
 
-class HebSummaries(dataset_lib.Dataset):
+class HebSummaries(dataset_lib.SummarizationDataset):
   """Implementation of the Dataset class for the HebSummaries dataset.
 
   This class transforms from raw dataset files into TensorFlow records.
   """
 
-  ARTICLE = "text_raw"
-  SUMMARY = "summary"
+  article = "text_raw"
+  summary = "summary"
 
   @property
   def dataset_name(self):
@@ -65,8 +65,8 @@ class HebSummaries(dataset_lib.Dataset):
     # pytype: disable=attribute-error
     feature = {
         "id": self.bytes_feature([ex["id"].encode()]),
-        self.ARTICLE: self.bytes_feature([ex[self.ARTICLE].encode()]),
-        self.SUMMARY: self.bytes_feature([ex[self.SUMMARY].encode()]),
+        self.article: self.bytes_feature([ex[self.article].encode()]),
+        self.summary: self.bytes_feature([ex[self.summary].encode()]),
     }
     # pytype: enable=attribute-error
 
@@ -75,18 +75,18 @@ class HebSummaries(dataset_lib.Dataset):
   def name_to_features(self):
     return immutabledict.immutabledict({
         "id": tf.io.FixedLenFeature([], tf.string),
-        self.ARTICLE: tf.io.FixedLenFeature([], tf.string),
-        self.SUMMARY: tf.io.FixedLenFeature([], tf.string),
+        self.article: tf.io.FixedLenFeature([], tf.string),
+        self.summary: tf.io.FixedLenFeature([], tf.string),
     })
 
   def read_raw_data_file(self, file_path):
     return io_utils.read_jsonl(file_path)
 
   def get_inputs(self, example):
-    return example[self.ARTICLE]
+    return example[self.article]
 
   def get_outputs(self, example):
-    return example[self.SUMMARY]
+    return example[self.summary]
 
   def get_example_id(self, example):
     return example["id"]

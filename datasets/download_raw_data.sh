@@ -1,4 +1,4 @@
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -97,3 +97,12 @@ for split in "train" "val" "test"; do
   wget -P ${raw_data_dir}/arsentiment https://huggingface.co/datasets/HebArabNlpProject/ArabicSentimentDataSet/resolve/main/arsentiment_${split}.jsonl
 done
 
+echo "ArXLSum"
+wget -P ${raw_data_dir}/ar_xlsum https://huggingface.co/datasets/csebuetnlp/xlsum/resolve/main/data/arabic_XLSum_v2.0.tar.bz2
+tar -xvf ${raw_data_dir}/ar_xlsum/arabic_XLSum_v2.0.tar.bz2 -C ${raw_data_dir}/ar_xlsum
+echo "Done"
+
+echo "ArabicNLI"
+for split in "train" "validation" "test"; do
+  wget -P ${raw_data_dir}/arabic_nli https://huggingface.co/datasets/facebook/xnli/resolve/main/ar/${split}-00000-of-00001.parquet
+done

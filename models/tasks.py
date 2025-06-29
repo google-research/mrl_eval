@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import tensorflow as tf
 import tensorflow.compat.v2 as tf_c2
 
 from mrl_eval.datasets import constants
+from mrl_eval.datasets.ar_xlsum import ar_xlsum_lib
+from mrl_eval.datasets.arabic_nli import arabic_nli_lib
 from mrl_eval.datasets.arcoref import arcoref_lib
 from mrl_eval.datasets.arq import arq_lib
 from mrl_eval.datasets.arsentiment import arsentiment_lib
@@ -37,7 +39,6 @@ from mrl_eval.datasets.hesentiment import hesentiment_lib
 from mrl_eval.datasets.hesum import hesum_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
 from mrl_eval.datasets.nemo import nemo_lib
-
 
 
 TaskRegistry = seqio.TaskRegistry
@@ -159,6 +160,34 @@ def preprocess_hebnli(example: Mapping[str, Any]) -> Mapping[str, Any]:
   }
 
 
+@seqio.map_over_dataset
+def preprocess_arabic_nli(example: Mapping[str, Any]) -> Mapping[str, Any]:
+  """Convert Arabic NLI examples to a text2text pair.
+
+  Arabic NLI, derived from XNLI, produces examples with this form:
+    {'premise': <arabic_sent_1>, 'hypothesis': <arabic_sent_2>,
+     'label': <label[int]>}
+  This function will return examples of the format:
+    {'inputs': 'مقدمة: <arabic_sent_1> فرضية: <arabic_sent_2>',
+     'targets': <arabic_label[str]>},
+
+  Args:
+    example: an example to process.
+
+  Returns:
+    A preprocessed example with the format listed above.
+  """
+  premise = example[arabic_nli_lib.PREMISE_KEY]
+  hypothesis = example[arabic_nli_lib.HYPOTHESIS_KEY]
+  inputs = _string_join(
+      [AR_PREMISE_PROMPT, premise, AR_HYPOTHESIS_PROMPT, hypothesis]
+  )
+
+  return {
+      "id": example["id"],
+      "inputs": inputs,
+      "targets": example[arabic_nli_lib.LABEL_KEY],
+  }
 
 
 @seqio.map_over_dataset
@@ -366,6 +395,28 @@ def register_hebnli(model_name: str):
   )
 
 
+def register_arabic_nli(model_name: str):
+  """Register Arabic NLI."""
+  task_name = constants.ARABIC_NLI
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = arabic_nli_lib.ArabicNLI()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[preprocess_arabic_nli, *DEFAULT_PREPROCESSORS],
+      metric_fns=dataset.metrics,
+  )
 
 
 def register_hesentiment(model_name: str):
@@ -415,13 +466,38 @@ def register_hesum(model_name: str):
       ),
       output_features=MT5_OUTPUT_FEATURES,
       preprocessors=[
-          get_tasks_values(dataset.ARTICLE, dataset.SUMMARY),
+          get_tasks_values(dataset.article, dataset.summary),
           *DEFAULT_PREPROCESSORS,
       ],
       metric_fns=dataset.metrics,
   )
 
 
+def register_ar_xlsum(model_name: str):
+  """Register ar_xlsum."""
+  task_name = constants.AR_XLSUM
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = ar_xlsum_lib.ArXLSum()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.article, dataset.summary),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
 
 
 def register_hebsummaries(model_name: str) -> None:
@@ -445,7 +521,7 @@ def register_hebsummaries(model_name: str) -> None:
       ),
       output_features=MT5_OUTPUT_FEATURES,
       preprocessors=[
-          get_tasks_values(dataset.ARTICLE, dataset.SUMMARY),
+          get_tasks_values(dataset.article, dataset.summary),
           *DEFAULT_PREPROCESSORS,
       ],
       metric_fns=dataset.metrics,
@@ -716,6 +792,8 @@ ALL_TASKS = [
     register_arcoref,
     register_iahlt_ner,
     register_hebsummaries,
+    register_arabic_nli,
+    register_ar_xlsum,
 ]
 for register_task in ALL_TASKS:
   register_task(_MODEL_MT5)

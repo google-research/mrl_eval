@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 
 """Finetune a model on a dataset."""
 
+from collections.abc import Mapping, Sequence
 import dataclasses
 import pathlib
 import shutil
-from typing import Any, Sequence, Mapping
+from typing import Any
 
 from absl import app
 from absl import flags
@@ -319,10 +320,10 @@ def _get_train_config_decoder_only(
       "output_dir": output_dir,
       "do_train": True,
       "num_train_epochs": 5,
-      "per_device_train_batch_size": 32,
+      "per_device_train_batch_size": 8,
       "eval_strategy": "steps",
       "learning_rate": 1e-5,
-      "eval_steps": 500,
+      "eval_steps": 0.33,
       "save_total_limit": 1,
       "save_strategy": "no",
       "lr_scheduler_type": "linear",

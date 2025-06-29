@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ from mrl_eval.hf.datasets.dataset_factory import hf_dataset_factory
 
 Path = pathlib.Path  # pylint: disable=invalid-import-order
 
+
+MIN_BATCH_SIZE = 4
 
 _DATASET = flags.DEFINE_enum(
     "dataset",
@@ -117,7 +119,8 @@ def main(argv: Sequence[str]):
         "attention_mask": attention_mask,
     }
 
-  batch_size = 16 if _DATASET.value != constants.HESUM else 8
+  train_config_batch_size = TASKS_CONFIGS[task]["per_device_eval_batch_size"]
+  batch_size = max(train_config_batch_size, MIN_BATCH_SIZE)
 
   if (is_encoder_decoder := _is_encoder_decoder(model_args.model_name_or_path)):
 

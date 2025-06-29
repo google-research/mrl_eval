@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 The Google Research Authors.
+# Copyright 2025 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -109,35 +109,35 @@ TASKS_CONFIGS = {
         "max_inputs_length": 800,
         "max_targets_length": 180,
         "generation_max_length": 180,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "tlnls",
     },
     constants.HEQ_QUESTION_GEN: {
         "max_inputs_length": 800,
         "max_targets_length": 180,
         "generation_max_length": 180,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "rougeL",
     },
     constants.NEMO_TOKEN: {
         "max_inputs_length": 200,
         "max_targets_length": 240,
         "generation_max_length": 240,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 16,
         "metric_for_best_model": "token_level_span_f1",
     },
     constants.NEMO_MORPH: {
         "max_inputs_length": 200,
         "max_targets_length": 240,
         "generation_max_length": 240,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 16,
         "metric_for_best_model": "token_level_span_f1",
     },
     constants.HESUM: {
         "max_inputs_length": 2000,
         "max_targets_length": 150,
         "generation_max_length": 120,
-        "per_device_eval_batch_size": 10,
+        "per_device_eval_batch_size": 1,
         "metric_for_best_model": "rouge2",
         "gradient_checkpointing": True,
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
@@ -157,7 +157,7 @@ TASKS_CONFIGS = {
         "eval_delay": 2000,
         "gradient_accumulation_steps": 2,
         "learning_rate": 5e-5,
-        "max_steps": 4096
+        "max_steps": 4096,
     },
     constants.HEBNLI: {
         "max_inputs_length": 250,
@@ -167,19 +167,25 @@ TASKS_CONFIGS = {
         "metric_for_best_model": "macro_f1",
     },
     constants.HEBCO: {
+        "num_train_epochs": (
+            50
+        ),  # override of default settings for decoder fine-tuning (5 epochs)
         "max_inputs_length": 2800,
         "max_targets_length": 3000,
         "generation_max_length": 3000,
-        "per_device_eval_batch_size": 2,
+        "per_device_eval_batch_size": 1,
         "metric_for_best_model": "macro_f1",
         "gradient_checkpointing": True,
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
     },
     constants.ARCOREF: {
+        "num_train_epochs": (
+            50
+        ),  # override of default settings for decoder fine-tuning (5 epochs)
         "max_inputs_length": 2800,
         "max_targets_length": 3000,
         "generation_max_length": 3000,
-        "per_device_eval_batch_size": 2,
+        "per_device_eval_batch_size": 1,
         "metric_for_best_model": "macro_f1",
         "gradient_checkpointing": True,
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
@@ -188,49 +194,49 @@ TASKS_CONFIGS = {
         "max_inputs_length": 1024,
         "max_targets_length": 64,
         "generation_max_length": 64,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "tlnls",
     },
     constants.ARQ_SPOKEN: {
         "max_inputs_length": 1024,
         "max_targets_length": 64,
         "generation_max_length": 64,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "tlnls",
     },
     constants.ARQ_MSA_QUESTION_GEN: {
         "max_inputs_length": 1024,
         "max_targets_length": 100,
         "generation_max_length": 100,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "rougeL",
     },
     constants.ARQ_SPOKEN_QUESTION_GEN: {
         "max_inputs_length": 1024,
         "max_targets_length": 100,
         "generation_max_length": 100,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "rougeL",
     },
     constants.ARSENTIMENT: {
         "max_inputs_length": 128,
         "max_targets_length": 4,
         "generation_max_length": 4,
-        "per_device_eval_batch_size": 128,
+        "per_device_eval_batch_size": 2,
         "metric_for_best_model": "macro_f1",
     },
     constants.ARTYDIQA: {
         "max_inputs_length": 1024,
         "max_targets_length": 64,
         "generation_max_length": 64,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "tydiqa_f1",
     },
     constants.ARTYDIQA_QUESTION_GEN: {
         "max_inputs_length": 1024,
         "max_targets_length": 100,
         "generation_max_length": 100,
-        "per_device_eval_batch_size": 32,
+        "per_device_eval_batch_size": 4,
         "metric_for_best_model": "rougeL",
     },
     constants.IAHLT_NER: {
@@ -240,5 +246,24 @@ TASKS_CONFIGS = {
         "per_device_eval_batch_size": 32,
         "metric_for_best_model": "token_level_span_f1",
     },
-
+    constants.AR_XLSUM: {
+        "max_inputs_length": 3000,
+        "max_targets_length": 150,
+        "generation_max_length": 150,
+        "per_device_eval_batch_size": 2,
+        "metric_for_best_model": "rouge2",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+        "eval_delay": 2000,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 5e-5,
+    },
+    constants.ARABIC_NLI: {
+        "max_steps": 50000,
+        "max_inputs_length": 560,
+        "max_targets_length": 20,
+        "generation_max_length": 20,
+        "per_device_eval_batch_size": 8,
+        "metric_for_best_model": "macro_f1",
+    },
 }
