@@ -133,6 +133,30 @@ TASKS_CONFIGS = {
         "per_device_eval_batch_size": 16,
         "metric_for_best_model": "token_level_span_f1",
     },
+    constants.WOJOOD_SPOKEN: {
+        "max_inputs_length": 200,
+        "max_targets_length": 240,
+        "generation_max_length": 240,
+        "per_device_eval_batch_size": 16,
+        "metric_for_best_model": "token_level_span_f1",
+        "max_steps": 8000,
+    },
+    constants.WOJOOD_MSA: {
+        "max_inputs_length": 200,
+        "max_targets_length": 240,
+        "generation_max_length": 240,
+        "per_device_eval_batch_size": 16,
+        "metric_for_best_model": "token_level_span_f1",
+        "max_steps": 32000,
+    },
+    constants.WOJOOD_FULL: {
+        "max_inputs_length": 200,
+        "max_targets_length": 240,
+        "generation_max_length": 240,
+        "per_device_eval_batch_size": 16,
+        "metric_for_best_model": "token_level_span_f1",
+        "max_steps": 32000,
+    },
     constants.HESUM: {
         "max_inputs_length": 2000,
         "max_targets_length": 150,
@@ -178,7 +202,31 @@ TASKS_CONFIGS = {
         "gradient_checkpointing": True,
         "gradient_checkpointing_kwargs": {"use_reentrant": False},
     },
+    constants.HEBCO_GOLD_MENTIONS: {
+        "num_train_epochs": (
+            50
+        ),  # override of default settings for decoder fine-tuning (5 epochs)
+        "max_inputs_length": 2800,
+        "max_targets_length": 3000,
+        "generation_max_length": 3000,
+        "per_device_eval_batch_size": 1,
+        "metric_for_best_model": "macro_f1",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+    },
     constants.ARCOREF: {
+        "num_train_epochs": (
+            50
+        ),  # override of default settings for decoder fine-tuning (5 epochs)
+        "max_inputs_length": 2800,
+        "max_targets_length": 3000,
+        "generation_max_length": 3000,
+        "per_device_eval_batch_size": 1,
+        "metric_for_best_model": "macro_f1",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+    },
+    constants.ARCOREF_GOLD_MENTIONS: {
         "num_train_epochs": (
             50
         ),  # override of default settings for decoder fine-tuning (5 epochs)
@@ -265,5 +313,56 @@ TASKS_CONFIGS = {
         "generation_max_length": 20,
         "per_device_eval_batch_size": 8,
         "metric_for_best_model": "macro_f1",
+    },
+    constants.MSA_SENTIMENT: {
+        "max_inputs_length": 1024,
+        "max_targets_length": 4,
+        "generation_max_length": 4,
+        "per_device_eval_batch_size": 4,
+        "metric_for_best_model": "macro_f1",
+        "eval_steps": 0.1
+    },
+    constants.ONTONOTES: {
+        "num_train_epochs": (
+            50
+        ),
+        "max_inputs_length": 2800,
+        "max_targets_length": 3000,
+        "generation_max_length": 3000,
+        "per_device_eval_batch_size": 1,
+        "metric_for_best_model": "macro_f1",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+    },
+    constants.ONTONOTES_GOLD_MENTIONS: {
+        "num_train_epochs": (
+            50
+        ),  # override of default settings for decoder fine-tuning (5 epochs)
+        "max_inputs_length": 2800,
+        "max_targets_length": 3000,
+        "generation_max_length": 3000,
+        "per_device_eval_batch_size": 1,
+        "metric_for_best_model": "macro_f1",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+    },
+    constants.SHAMNER: {
+        "max_inputs_length": 200,
+        "max_targets_length": 240,
+        "generation_max_length": 240,
+        "per_device_eval_batch_size": 32,
+        "metric_for_best_model": "token_level_span_f1",
+    },
+    constants.ASAS: {
+        "max_inputs_length": 2048,
+        "max_targets_length": 512,
+        "generation_max_length": 512,
+        "per_device_train_batch_size": 1,
+        "per_device_eval_batch_size": 1,
+        "metric_for_best_model": "rouge2",
+        "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 5e-5,
     },
 }

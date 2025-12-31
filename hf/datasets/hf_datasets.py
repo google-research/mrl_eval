@@ -25,11 +25,19 @@ from mrl_eval.datasets import constants
 from mrl_eval.datasets.ar_xlsum import ar_xlsum_lib
 from mrl_eval.datasets.arabic_nli import arabic_nli_lib
 from mrl_eval.datasets.arcoref import arcoref_lib
+from mrl_eval.datasets.arcoref_gold_mentions import arcoref_gold_mentions_lib
 from mrl_eval.datasets.artydiqa import artydiqa_lib
+from mrl_eval.datasets.asas import asas_lib
 from mrl_eval.datasets.hebco import hebco_lib
+from mrl_eval.datasets.hebco_gold_mentions import hebco_gold_mentions_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
+from mrl_eval.datasets.msa_sentiment import msa_sentiment_lib
+from mrl_eval.datasets.ontonotes import ontonotes_lib
+from mrl_eval.datasets.ontonotes_gold_mentions import ontonotes_gold_mentions_lib
+from mrl_eval.datasets.shamner import shamner_lib
 from mrl_eval.evaluation import metrics
 from mrl_eval.hf.datasets import hf_datasets_lib
+
 
 _AR_ANSWER_PROMPT = "الجواب:"
 _AR_QUESTION_PROMPT = "السؤال:"
@@ -193,6 +201,59 @@ class HfNemo(hf_datasets_lib.HfDataset):
     return [metrics.token_level_span_f1]
 
 
+class HfWojood(hf_datasets_lib.HfDataset):
+  """Arabic NER dataset."""
+
+  _variant = None
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample["id"],
+        "inputs": sample["inputs"],
+        "targets": sample["targets_as_entity_markers"],
+    }
+
+  @property
+  def dataset_name(self):
+    if self._variant == "spoken":
+      return constants.WOJOOD_SPOKEN
+    elif self._variant == "MSA":
+      return constants.WOJOOD_MSA
+    else:
+      return constants.WOJOOD_FULL
+
+  def metrics(self):
+    return [metrics.token_level_span_f1]
+
+  def get_data_file_path(self, split):
+    if split == "val":
+      return (
+          pathlib.Path(constants.BASE_PATH)
+          / self.dataset_name
+          / "jsonl"
+          / "dev.jsonl"
+      )
+    else:
+      return (
+          pathlib.Path(constants.BASE_PATH)
+          / self.dataset_name
+          / "jsonl"
+          / f"{split}.jsonl"
+      )
+
+
+class HfWojoodSpoken(HfWojood):
+  _variant = "spoken"
+
+
+class HfWojoodMsa(HfWojood):
+  _variant = "MSA"
+
+
+class HfWojoodFull(HfWojood):
+  _variant = "full"
+
+
 class HfNemoToken(HfNemo):
   _level = "token"
 
@@ -265,6 +326,36 @@ class HfHebCo(hf_datasets_lib.HfDataset):
     ]
 
 
+class HfHebCoGoldMentions(hf_datasets_lib.HfDataset):
+  """Hebrew coreference resolution with gold mentions dataset."""
+
+  TEXT_FIELD = hebco_gold_mentions_lib.HebcoGoldMentions.TEXT_FIELD
+  TARGET_FIELD = hebco_gold_mentions_lib.HebcoGoldMentions.TARGET_FIELD
+  ID_FIELD = hebco_gold_mentions_lib.HebcoGoldMentions.ID_FIELD
+
+  INNER_SEP = hebco_gold_mentions_lib.HebcoGoldMentions.INNER_SEP
+  OUTER_SEP = hebco_gold_mentions_lib.HebcoGoldMentions.OUTER_SEP
+  WORD_SEP = hebco_gold_mentions_lib.HebcoGoldMentions.WORD_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.HEBCO_GOLD_MENTIONS
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            hebco_gold_mentions_lib.HebcoGoldMentions().target_format_strategy.parse_string_representation
+        )
+    ]
+
+
 class HfArCoref(hf_datasets_lib.HfDataset):
   """Arabic coreference resolution dataset."""
 
@@ -293,6 +384,36 @@ class HfArCoref(hf_datasets_lib.HfDataset):
             hebco_lib.get_parse_string_representation(
                 inner_sep=self.INNER_SEP, outer_sep=self.OUTER_SEP
             )
+        )
+    ]
+
+
+class HfArCorefGoldMentions(hf_datasets_lib.HfDataset):
+  """Arabic coreference resolution dataset with gold mentions."""
+
+  TEXT_FIELD = arcoref_gold_mentions_lib.ArCorefGoldMentions.TEXT_FIELD
+  TARGET_FIELD = arcoref_gold_mentions_lib.ArCorefGoldMentions.TARGET_FIELD
+  ID_FIELD = arcoref_gold_mentions_lib.ArCorefGoldMentions.ID_FIELD
+
+  INNER_SEP = arcoref_gold_mentions_lib.ArCorefGoldMentions.INNER_SEP
+  OUTER_SEP = arcoref_gold_mentions_lib.ArCorefGoldMentions.OUTER_SEP
+  WORD_SEP = arcoref_gold_mentions_lib.ArCorefGoldMentions.WORD_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.ARCOREF_GOLD_MENTIONS
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            arcoref_gold_mentions_lib.ArCorefGoldMentions().target_format_strategy.parse_string_representation
         )
     ]
 
@@ -408,6 +529,31 @@ class HfArSentiment(hf_datasets_lib.HfDataset):
 def _string_join(lst):
   """Joins elements on space, collapsing consecutive spaces."""
   return re.sub(r"\s+", " ", " ".join(lst))
+
+
+class HfMsaSentiment(hf_datasets_lib.HfDataset):
+  """MSA Arabic sentiment classification dataset."""
+
+  def _preprocess_example(self, sample):
+    return {
+        "inputs": sample["review"],
+        "targets": sample["sentiment"],
+        "id": sample["id"],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.MSA_SENTIMENT
+
+  def metrics(self):
+    return [
+        metrics.accuracy,
+        metrics.get_macro_f1_fn([
+            msa_sentiment_lib.MSASentiment.POSITIVE_LABEL,
+            msa_sentiment_lib.MSASentiment.NEGATIVE_LABEL,
+            msa_sentiment_lib.MSASentiment.NEUTRAL_LABEL,
+        ]),
+    ]
 
 
 class HfArTyDiQA(hf_datasets_lib.HfDataset):
@@ -547,6 +693,114 @@ class HfArXLSum(hf_datasets_lib.HfDataset):
   @property
   def dataset_name(self):
     return constants.AR_XLSUM
+
+  def metrics(self):
+    return [metrics.rouge]
+
+
+class HfOntoNotes(hf_datasets_lib.HfDataset):
+  """OntoNotes Arabic coreference resolution dataset."""
+
+  TEXT_FIELD = ontonotes_lib.Ontonotes.TEXT_FIELD
+  TARGET_FIELD = ontonotes_lib.Ontonotes.TARGET_FIELD
+  ID_FIELD = ontonotes_lib.Ontonotes.ID_FIELD
+
+  INNER_SEP = ontonotes_lib.Ontonotes.INNER_SEP
+  OUTER_SEP = ontonotes_lib.Ontonotes.OUTER_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.ONTONOTES
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            ontonotes_lib.get_parse_string_representation(
+                inner_sep=self.INNER_SEP, outer_sep=self.OUTER_SEP
+            )
+        )
+    ]
+
+
+class HfOntoNotesGoldMentions(hf_datasets_lib.HfDataset):
+  """OntoNotes arabic coreference resolution with gold mentions dataset."""
+
+  TEXT_FIELD = ontonotes_gold_mentions_lib.OntoNotesGoldMentions.TEXT_FIELD
+  TARGET_FIELD = ontonotes_gold_mentions_lib.OntoNotesGoldMentions.TARGET_FIELD
+  ID_FIELD = ontonotes_gold_mentions_lib.OntoNotesGoldMentions.ID_FIELD
+
+  INNER_SEP = ontonotes_gold_mentions_lib.OntoNotesGoldMentions.INNER_SEP
+  OUTER_SEP = ontonotes_gold_mentions_lib.OntoNotesGoldMentions.OUTER_SEP
+
+  @property
+  def dataset_name(self):
+    return constants.ONTONOTES_GOLD_MENTIONS
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def metrics(self):
+    return [
+        metrics.get_em_cluster_matching_f1_fn(
+            ontonotes_gold_mentions_lib.OntoNotesGoldMentions().target_format_strategy.parse_string_representation
+        )
+    ]
+
+
+class HfShamNer(hf_datasets_lib.HfDataset):
+  """Levantine Arabic NER dataset."""
+
+  TEXT_FIELD = shamner_lib.ShamNER.TEXT_KEY
+  TARGET_FIELD = shamner_lib.ShamNER.LABEL_KEY
+  ID_FIELD = shamner_lib.ShamNER.ID_FIELD
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[self.ID_FIELD],
+        "inputs": sample[self.TEXT_FIELD],
+        "targets": sample[self.TARGET_FIELD],
+    }
+
+  def get_data_file_path(self, split):
+    return (
+        pathlib.Path(constants.BASE_PATH)
+        / self.dataset_name
+        / "jsonl"
+        / f"{split}.jsonl"
+    )
+
+  @property
+  def dataset_name(self):
+    return constants.SHAMNER
+
+  def metrics(self):
+    return [metrics.token_level_span_f1]
+
+
+class HfASAS(hf_datasets_lib.HfDataset):
+  """ASAS Arabic summarization dataset."""
+
+  def _preprocess_example(self, sample):
+    return {
+        "id": sample[asas_lib.ASAS.ID],
+        "inputs": sample[asas_lib.ASAS.article],
+        "targets": sample[asas_lib.ASAS.summary],
+    }
+
+  @property
+  def dataset_name(self):
+    return constants.ASAS
 
   def metrics(self):
     return [metrics.rouge]

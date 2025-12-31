@@ -23,6 +23,7 @@ import abc
 from collections.abc import Callable, Iterable, Mapping, Sequence
 import os
 import pathlib
+import random
 from typing import Any
 
 import tensorflow as tf
@@ -49,18 +50,64 @@ class Dataset(abc.ABC):
 
   This class defines the Dataset class functionalities:
   - Read/Write functionalities.
-  - Ingests functionalities - converting  into specific formats (such as
+  - Ingests functionalities - converting into specific formats (such as
     TFRecords or JSONL) and then writing them to Disk.
   - Evaluation functionalities.
   """
 
-  def preprocess_dataset(self, save_tfrecord):
+  def __init__(self, val_size_from_train = None):
+    """Initializes the Dataset class.
+
+    Args:
+      val_size_from_train: Take a proportion of the train data for a dev set.
+        If None, no dev set will be created from the train set.
+    """
+    self.val_size_from_train = val_size_from_train
+
+  def _field_validator_val_size_from_train(self):
+    """Validates the val_size_from_train field."""
+    if not self.val_size_from_train:
+      return
+
+    if not (0 < self.val_size_from_train < 1.0):
+      raise ValueError("Invalid val_size_from_train value.")
+    elif "val" in self.raw_files.keys():
+      raise ValueError("Ext validation set exists, no need to take from train.")
+
+  def post_init_validator(self):
+    """Validates the dataset is properly constructed."""
+    self._field_validator_val_size_from_train()
+
+  def preprocess_dataset(
+      self, save_tfrecord
+  ):
     """Preprocesses the dataset."""
     for split, filename in self.raw_files.items():
       dataset = self._read_and_process_dataset(filename)
-      self._write_dataset_to_jsonl(split, dataset)
-      if save_tfrecord:
-        self._write_dataset_to_tfrecord(split, dataset)
+      if self.val_size_from_train is not None and split == "train":
+        dataset, devset = self._split_train_and_dev(dataset)
+        self._write_dataset("val", devset, save_tfrecord)
+
+      self._write_dataset(split, dataset, save_tfrecord)
+
+  def _split_train_and_dev(
+      self, dataset, seed = 900913
+  ):
+    """Splits the dataset into train and dev sets."""
+    print(f"Taking {self.val_size_from_train} of the train set for a dev set.")
+    random.seed(seed)
+    random.shuffle(dataset)
+
+    split_index = int(len(dataset) * self.val_size_from_train)
+    dev_set, train_set = dataset[:split_index], dataset[split_index:]
+    return train_set, dev_set
+
+  def _write_dataset(
+      self, split, dataset, save_tfrecord
+  ):
+    self._write_dataset_to_jsonl(split, dataset)
+    if save_tfrecord:
+      self._write_dataset_to_tfrecord(split, dataset)
 
   def _write_dataset_to_jsonl(self, split, dataset):
     """Writes a dataset split to a jsonl file."""

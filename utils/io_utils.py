@@ -40,6 +40,13 @@ def create_dir(directory):
     makedirs(directory)
 
 
+def read_txt_lines(path):
+  """Reads a text file."""
+  with open_file(path, "r") as f:
+    lines = f.readlines()
+  return lines
+
+
 def read_csv(path):
   """Reads a csv file.
 
@@ -51,6 +58,20 @@ def read_csv(path):
   """
   with open_file(path, "r") as f:
     df = pd.read_csv(f, lineterminator="\n")
+  return df
+
+
+def read_tsv(path):
+  """Reads a tsv file.
+
+  Args:
+    path: The path to the file.
+
+  Returns:
+    The csv object in the file.
+  """
+  with open_file(path, "r") as f:
+    df = pd.read_csv(f, delimiter="\t")
   return df
 
 

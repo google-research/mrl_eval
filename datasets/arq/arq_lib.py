@@ -52,6 +52,7 @@ class ArQ(dataset_lib.Dataset):
   """
 
   def __init__(self, variant = "spoken"):
+    super().__init__()
     if variant not in ["spoken", "MSA"]:
       raise ValueError(
           f"Unsupported ArQ variant: {variant}. Supported variants are 'spoken'"

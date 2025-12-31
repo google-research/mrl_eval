@@ -160,6 +160,7 @@ class DecoderEvalAndSaveCallback(transformers.TrainerCallback):
             attention_mask=attention_mask,
             generation_config=self.gen_config,
             pad_token_id=self.trainer.processing_class.eos_token_id,  # pytype: disable=attribute-error
+            disable_compile=True,
         )
 
       input_length = input_ids.shape[1]
@@ -295,7 +296,7 @@ def _get_train_config_encoder_decoder(
       "predict_with_generate": True,
       "logging_steps": 20,
       "logging_strategy": "steps",  # Frequency of logging to file
-      "report_to": "tensorboard",
+      "report_to": [],
       "logging_dir": f"{output_dir}/logs",
       "gradient_accumulation_steps": 4,
       "save_only_model": True,
@@ -408,6 +409,7 @@ def finetune_encoder_decoder(train_config: TrainConfig) -> None:
       f" a {train_config.training_args.metric_for_best_model} validation score"
       f" of {trainer.state.best_metric}"
   )
+
 
 
 def finetune_decoder_only(

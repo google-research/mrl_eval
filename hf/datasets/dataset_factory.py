@@ -43,12 +43,22 @@ def hf_dataset_factory(
       return hf_datasets.HfNemoMorph(data_args, tokenizer, for_decoder_only)
     case constants.NEMO_TOKEN:
       return hf_datasets.HfNemoToken(data_args, tokenizer, for_decoder_only)
+    case constants.WOJOOD_SPOKEN:
+      return hf_datasets.HfWojoodSpoken(data_args, tokenizer, for_decoder_only)
+    case constants.WOJOOD_MSA:
+      return hf_datasets.HfWojoodMsa(data_args, tokenizer, for_decoder_only)
+    case constants.WOJOOD_FULL:
+      return hf_datasets.HfWojoodFull(data_args, tokenizer, for_decoder_only)
     case constants.HESUM:
       return hf_datasets.HfHeSum(data_args, tokenizer, for_decoder_only)
     case constants.HEBNLI:
       return hf_datasets.HfHebNLI(data_args, tokenizer, for_decoder_only)
     case constants.HEBCO:
       return hf_datasets.HfHebCo(data_args, tokenizer, for_decoder_only)
+    case constants.HEBCO_GOLD_MENTIONS:
+      return hf_datasets.HfHebCoGoldMentions(
+          data_args, tokenizer, for_decoder_only
+      )
     case constants.ARQ_SPOKEN:
       return hf_datasets.HfArQ("spoken", data_args, tokenizer, for_decoder_only)
     case constants.ARQ_SPOKEN_QUESTION_GEN:
@@ -71,6 +81,10 @@ def hf_dataset_factory(
       )
     case constants.ARCOREF:
       return hf_datasets.HfArCoref(data_args, tokenizer, for_decoder_only)
+    case constants.ARCOREF_GOLD_MENTIONS:
+      return hf_datasets.HfArCorefGoldMentions(
+          data_args, tokenizer, for_decoder_only
+      )
     case constants.IAHLT_NER:
       return hf_datasets.HfIahltNer(data_args, tokenizer, for_decoder_only)
     case constants.HEBSUMMARIES:
@@ -79,6 +93,20 @@ def hf_dataset_factory(
       return hf_datasets.HfArabicNLI(data_args, tokenizer, for_decoder_only)
     case constants.AR_XLSUM:
       return hf_datasets.HfArXLSum(data_args, tokenizer, for_decoder_only)
+    case constants.MSA_SENTIMENT:
+      return hf_datasets.HfMsaSentiment(data_args, tokenizer, for_decoder_only)
+    case constants.ONTONOTES:
+      return hf_datasets.HfOntoNotes(
+          data_args, tokenizer, for_decoder_only
+      )
+    case constants.ONTONOTES_GOLD_MENTIONS:
+      return hf_datasets.HfOntoNotesGoldMentions(
+          data_args, tokenizer, for_decoder_only
+      )
+    case constants.SHAMNER:
+      return hf_datasets.HfShamNer(data_args, tokenizer, for_decoder_only)
+    case constants.ASAS:
+      return hf_datasets.HfASAS(data_args, tokenizer, for_decoder_only)
 
     case _:
       raise ValueError(f"Dataset {dataset_name} is not defined.")

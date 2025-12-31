@@ -1,19 +1,20 @@
-# MRLEval - a benchmark for morphologically rich languages
+# MRLEval - A Benchmark for Morphologically Rich Languages
 
 Note: This is not an officially supported Google product.
 
 ## Introduction
 
-This repository contains code for downloading, processing, fine-tuning, running
-inference, and evaluating models in a fine-tuning setting on various natural
-language tasks in Hebrew, Modern Standard Arabic and Levantine Arabic. The tasks
-are detailed [below](#tasks).
+This repository contains code for evaluating LLMs on various natural language
+tasks in three Semitic Languages: Modern Hebrew, Modern Standard Arabic and
+Levantine Arabic. The tasks are detailed [below](#tasks). This page includes
+instructions for downloading, processing, fine-tuning, running inference, and
+evaluating models in a fine-tuning setting.
 
-Scripts are included to fine-tune encoder-decoder and decoder LLMs, and generate
-test set predictions using both [Huggingface transformers](#huggingface) and
-[T5X](#t5x). An [evaluation script](#evaluation) calculates performance metrics
-from these predictions. [Baseline results](#baseline_results) on all tasks using
-mt5-XL are provided.
+We include scripts for fine-tuning encoder-decoder and decoder LLMs, and
+for generating test set predictions using both Huggingface transformers and T5X.
+The [evaluation script](#evaluation) calculates performance metrics from these
+predictions. In this page we provide [Baseline results](#baseline_results) on
+all tasks using mt5-XL.
 
 ## Tasks
 
@@ -21,28 +22,35 @@ The following tasks are supported:
 
 | Language               | Name               | Task                       | Metric    | Paper / Page                                                                                               |
 |------------------------|--------------------|----------------------------|-----------|------------------------------------------------------------------------------------------------------------|
+| Hebrew                 | HebNLI             | Natural Language Inference | Macro F1  | [Page](https://github.com/NNLP-IL/HebNLI)                                                                   |
+| Hebrew                 | HeSentiment        | Sentiment Analysis         | Macro F1  | [Page](https://huggingface.co/datasets/HebArabNlpProject/HebrewSentiment)                                    |
 | Hebrew                 | HeQ                | Question Answering         | TLNLS     | [Paper](https://aclanthology.org/2023.findings-emnlp.915/)                                                 |
 | Hebrew                 | HeQ-QG             | Question Generation        | Rouge     | [Paper](https://aclanthology.org/2023.findings-emnlp.915/)                                                  |
 | Hebrew                 | HeSum              | Summarization              | Rouge     | [Paper](https://arxiv.org/pdf/2406.03897)                                                                   |
 | Hebrew                 | HebSummaries       | Summarization              | Rouge     | [Page](https://huggingface.co/datasets/HebArabNlpProject/HebSummaries)                                       |
-| Hebrew                 | HeSentiment        | Sentiment Analysis         | Macro F1  | [Page](https://huggingface.co/datasets/HebArabNlpProject/HebrewSentiment)                                    |
 | Hebrew                 | Nemo-Token         | NER (token level)          | F1        | [Paper](https://arxiv.org/pdf/2007.15620)                                                                   |
 | Hebrew                 | Nemo-Morph         | NER (morph level)          | F1        | [Paper](https://arxiv.org/pdf/2007.15620)                                                                   |
-| Hebrew                 | HebNLI             | Natural Language Inference | Macro F1  | [Page](https://github.com/NNLP-IL/HebNLI)                                                                   |
-| Hebrew                 | HebCo          | Coreference Resolution         | Macro F1  | [Page](https://github.com/IAHLT/coref)                                                                      |
-| &nbsp;                       |                    |                            |            
+| Hebrew                 | HebCo          | [Coreference Resolution](datasets/README.md)         | Macro F1  | [Page](https://github.com/IAHLT/coref)                                                                      |
+| &nbsp;                       |                    |                            |
+| Modern Standard Arabic | ArabicNLI         | Natural Language Inference                       | Macro F1        | [Page](https://huggingface.co/datasets/facebook/xnli)                                  |
+| Modern Standard Arabic | MSA Sentiment         | Sentiment Analysis                       | Macro F1        | [Page](https://github.com/mohamedadaly/LABR/tree/master)                                  |
 | Modern Standard Arabic | ArQ-MSA-QA         | Question Answering         | TLNLS     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                                |
 | Modern Standard Arabic | ArQ-MSA-QG         | Question Generation        | Rouge     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                                |
 | Modern Standard Arabic | ArTyDiQA-QA        | Question Answering         | TyDiQA-F1     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
 | Modern Standard Arabic | ArTyDiQA-QG        | Question Generation        | Rouge     | [Page](https://github.com/google-research-datasets/artydiqa)                                                |
-| Modern Standard Arabic | IAHLT-NER          | Named Entity Recognition                        | F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/arabic-iahlt-NER)                                  |
 | Modern Standard Arabic | ArXLSum          | Summarization                        | Rouge        | [Page](https://huggingface.co/datasets/csebuetnlp/xlsum)                                  |
-| Modern Standard Arabic | ArabicNLI         | Natural Language Inference                       | Macro F1        | [Page](https://huggingface.co/datasets/facebook/xnli)                                  |
-| &nbsp;                       |                    |                            |            
+| Modern Standard Arabic | ASAS          | Summarization                        | Rouge        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ASAS)                                  |
+| Modern Standard Arabic | IAHLT-NER          | Named Entity Recognition                        | F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/arabic-iahlt-NER)                                  |
+| Modern Standard Arabic & Levantine Arabic | Wojood-Full  | NER (token level) | F1  | [Paper](https://aclanthology.org/2022.lrec-1.387/) |
+| Modern Standard Arabic | Wojood-MSA  | NER (token level) | F1  | [Paper](https://aclanthology.org/2022.lrec-1.387/) |
+| Modern Standard Arabic | OntoNotes  | [Coreference Resolution](datasets/README.md)   | Macro F1 | [Page](https://catalog.ldc.upenn.edu/LDC2013T19)
+| &nbsp;                       |                    |                            |
 | Levantine Arabic       | ArSentiment        | Sentiment Analysis         | Macro F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArabicSentimentDataSet)                            |
-| Levantine Arabic       | ArCoref            | Coreference                | Macro F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArabCoRef)                                          |
 | Levantine Arabic       | ArQ-Spoken-QA      | Question Answering         | TLNLS     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                      |
 | Levantine Arabic       | ArQ-Spoken-QG      | Question Generation        | Rouge     | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArQ)                                      |
+| Levantine Arabic | Wojood-Spoken  | NER (token level) | F1  | [Paper](https://aclanthology.org/2022.lrec-1.387/) |
+| Levantine Arabic | ShamNER  | Named Entity Recognition | F1  | [Page](https://huggingface.co/datasets/HebArabNlpProject/ShamNER) |
+| Levantine Arabic       | ArCoref            | [Coreference Resolution](datasets/README.md)   | Macro F1        | [Page](https://huggingface.co/datasets/HebArabNlpProject/ArabCoRef)                                          |
 
 ## Setup
 
@@ -63,12 +71,87 @@ pip install -r requirements.txt
 
 ## Data
 
-Download and preprocess raw data for all tasks:
+Download and preprocess raw data for all tasks (done once per dataset):
 
 ```bash
 bash mrl_eval/datasets/download_raw_data.sh
 bash mrl_eval/datasets/ingest_all_datasets.sh
 ```
+
+### OntoNotes Dataset Preparation
+
+To prepare the dataset for the OntoNotes task (End-to-end and Gold Mentions
+variants) follow these steps:
+
+1.  **Download the OntoNotes 5.0 dataset:** Obtain the dataset from the LDC website ([LDC2013T19](https://catalog.ldc.upenn.edu/LDC2013T19)).
+2.  **Generate CoNLL 2012 Data Split in JSONL format:** Run this script to generate the `jsonl` files for the Arabic subset of the dataset: [setup\_training.sh]([setup_training.sh](https://github.com/kentonl/e2e-coref/blob/master/setup_training.sh)).
+3.  **Run the data ingestion script:** Copy the generated files to the data directory `mrl_eval_data/ontonotes/` and `mrl_eval_data/ontonotes_gold_mentions/`, and run the ingestion script:
+
+```
+python -m mrl_eval.datasets.ingest_dataset ontonotes
+python -m mrl_eval.datasets.ingest_dataset ontonotes_gold_mentions
+```
+
+## Fine-tuning and inference
+
+To finetune on a specific dataset using Huggingface, run:
+
+```bash
+python -m mrl_eval.hf.finetune --dataset {dataset}
+```
+
+The options for `dataset` are:
+
+*   hebnli
+*   hesentiment
+*   heq
+*   heq_question_gen
+*   hesum
+*   hebsummaries
+*   nemo_token
+*   nemo_morph
+*   hebco
+*   hebco_gold_mentions
+*   arabic_nli
+*   msa_sentiment
+*   arq_MSA
+*   arq_MSA_question_gen
+*   artydiqa
+*   artydiqa_question_gen
+*   ar_xlsum
+*   asas
+*   iahlt_ner
+*   wojood_msa
+*   wojood_full
+*   ontonotes
+*   ontonotes_gold_mentions
+*   arsentiment
+*   arq_spoken
+*   arq_spoken_question_gen
+*   wojood_spoken
+*   shamner
+*   arcoref
+*   arcoref_gold_mentions
+
+By default, the `mt5-xl` model will be trained. To train a different model (e.g.
+a decoder LLM) specify its HF model name as follows:
+
+```bash
+python -m mrl_eval.hf.finetune --dataset {dataset} --model "google/gemma-2-9b"
+```
+
+Decoder models will be trained by default with LORA using half precision.
+
+Once the training is done, the script will print the path to the best
+checkpoint.
+
+To generate responses for the inputs of the test set, run:
+
+```bash
+python -m mrl_eval.hf.generate --dataset {dataset} --checkpoint_path path/to/checkpoint
+```
+
+Alternatively, the T5X framework can also be used for running training and inference with T5-family models. For more details, see [models/T5X.md](models/T5X.md).
 
 ## Evaluation
 
@@ -78,28 +161,7 @@ To evaluate the score of model predictions, run:
 python -m mrl_eval.evaluation.evaluate --dataset {dataset} --predictions_path path/to/prediction/file
 ```
 
-The options for `dataset` are:
-
-*   heq
-*   heq_question_gen
-*   hesum
-*   hebsummaries
-*   hesentiment
-*   nemo_token
-*   nemo_morph
-*   hebnli
-*   hebco
-*   arabic_nli
-*   arq_MSA
-*   arq_MSA_question_gen
-*   arq_spoken
-*   arq_spoken_question_gen
-*   arsentiment
-*   arcoref
-*   artydiqa
-*   artydiqa_question_gen
-*   ar_xlsum
-*   iahlt_ner
+The options for `dataset` are the same as [above](#fine-tuning-and-inference).
 
 Your predictions file is expected to be a jsonl file in the following format:
 
@@ -123,142 +185,112 @@ the table below.
 | Hebrew                 | mT5-XL  | NEMO             | Token / Morph F1 | 86.3 / 84.8         |
 | Hebrew                 | mT5-XL  | Sentiment        | Macro F1         | 85.0                |
 | Hebrew                 | mT5-XL  | HebNLI           | Macro F1         | 84.6                |
-| Hebrew                 | mT5-XL  | Hebco            | Macro F1         | 49.3                |
+| Hebrew                 | mT5-XL  | Hebco           | End-to-end / Gold Mentions Macro F1         | 49.3 / 75.8         |
 | &nbsp;                 |         |                  |                  |                     |
 | Modern Standard Arabic | mT5-XL  | ArQ-MSA-QA       | TLNLS            | 79.5                |
 | Modern Standard Arabic | mT5-XL  | ArQ-MSA-QG       | R1/R2/RL         | 35.8 / 17.2 / 35.5  |
 | Modern Standard Arabic | mT5-XL  | ArTyDi-QA        | TyDiQA-F1            | 87.4            |
 | Modern Standard Arabic | mT5-XL  | ArTyDi-QG        | R1/R2/RL         | 60.6 / 44.1 / 60.5  |
-| Modern Standard Arabic | mT5-XL  | IAHLT-NER        | Token F1         | 64.6                |
+| Modern Standard Arabic | mT5-XL  | IAHLT-NER        | Token F1         | 84.2                |
 | Modern Standard Arabic | mT5-XL  | ArabicNLI        | Macro F1         |  82.2 |
 | Modern Standard Arabic | mT5-XL  | ArXLSum          | R1/R2/RL         | 26.5 / 11.4 / 23.4  |
+| Modern Standard Arabic | mT5-XL  | ASAS             | R1/R2/RL         | 39.5 / 21.3 / 27.8 |
+| Modern Standard Arabic | mT5-XL  | MSA Sentiment          | Macro F1         | 61.0  |
+| Modern Standard Arabic & Levantine Arabic | mT5-XL | Wojood-Full | Token F1 | 90.67 |
+| Modern Standard Arabic | mT5-XL | Wojood-MSA | Token F1 | 91.62 |
+| Modern Standard Arabic | mT5-XL | OntoNotes    | End-to-end / Gold Mentions Macro F1       |    50.9 / 88.7         |
 | &nbsp;                 |         |                  |                  |                     |
 | Levantine Arabic       | mT5-XL  | ArSentiment      | Macro F1         | 71.2                |
-| Levantine Arabic       | mT5-XL  | ArCoref          | Macro F1         | 50.1                |
 | Levantine Arabic       | mT5-XL  | ArQ-spoken-QA    | TLNLS            | 81.8                |
 | Levantine Arabic       | mT5-XL  | ArQ-spoken-QG    | R1/R2/RL         | 35.6 / 16.6 / 35.3  |
+| Levantine Arabic       | mT5-XL | Wojood-Spoken | Token F1 | 79.12 |
+| Levantine Arabic       | mT5-XL | ShamNER | Token F1 | 42.0 |
+| Levantine Arabic       | mT5-XL  | ArCoref          | End-to-end / Gold Mentions Macro F1         | 50.1  / 74.4               |
 
-## Fine-tuning and inference
+## Autoraters (LLM as a Judge)
 
-### Huggingface
+This framework includes an evaluation module that leverages a Large Language
+Model (LLM) for assessing the quality of question generation and summarization
+tasks - offering evaluation beyond word matching metrics. The specific model
+used for this evaluation is Gemini 2.5 Flash, accessed via the Vertex AI
+platform on Google Cloud.
 
-To finetune on a specific dataset:
+More details about autoraters can be found in
+[evaluation/autoraters/README.md](evaluation/autoraters/README.md).
 
-```bash
-python -m mrl_eval.hf.finetune --dataset {dataset}
-```
+### Autorating for Question Generation
 
-By default, this will train `mt5-xl`. To train a different model (e.g. a
-decoder LLM) specify its HF model name as follows:
+For question generation the Autorater evaluates **answerability** which is
+the percentage of generated questions that can be accurately and directly
+answered by the provided reference answer/passage.
 
-```bash
-python -m mrl_eval.hf.finetune --dataset {dataset} --model "google/gemma-2-9b"
-```
-
-Decoder model will be trained by default with LORA using half precision.
-
-The options for `dataset` are the same as [above](#evaluation).
-
-Once the training is done, the script will print the path to the best
-checkpoint.
-
-To generate response for the inputs of the test set:
-
-```bash
-python -m mrl_eval.hf.generate --dataset {dataset} --checkpoint_path path/to/checkpoint
-```
-
-### T5X
-
-#### Establishing a GCP project
-
-First, follow the guidelines at
-[XManager](https://github.com/google-deepmind/xmanager) for establishing a
-google cloud project. Specifically, follow the guidelines for setting up a
-Google Cloud project. You will be using two cloud infrastructures: a bucket for
-storing your training outputs (logs, model checkpoints) and a compute engine
-where you will run the project. **We will be using the bucket path in the
-training and inference scripts.** Follow the instructions at
-[T5X](https://github.com/google-research/t5x) to request an appropriate VM. **We
-will be setting up the project environment inside this VM.**
-
-#### Setting up MRLEval in GCP
-
-Second, proceed to build the environment **inside your compute engine**. All of
-the following should happen from your GCP VM:
-
-##### 1. Follow the instruction to install [T5X](https://github.com/google-research/t5x) as well as [XManager](https://github.com/google-deepmind/xmanager).
-
-We will be using the path to the cloned T5X repo in the training and inference
-scripts.
-
-##### 2. Clone MRLEval
-
-*   No need to install the requirements; this will be handled implicitly by
-    XManager via the fine-tune and inference script arguments.
-
-##### 3. Run Data Ingestion.
-
-Download and preprocess raw data for all tasks (note the save_tfrecord flag):
-
-```bash
-bash mrl_eval/datasets/download_raw_data.sh
-bash mrl_eval/datasets/ingest_all_datasets.sh save_tfrecord
-```
-
-At this point your project structure will be similar to:
+The following command can be used to run autorater evaluation on question
+generation datasets:
 
 ```
-${HOME}
-└── some_dir
-       └── main_project_dir
-           ├── mrl_eval # where you cloned mrl_eval
-           └── mrl_eval_data # a directory for data outputs, will be created when running Data-Ingestion
-       └── cloned_t5x_repo # where you cloned t5x
+python -m mrl_eval.evaluation.autoraters.qg_autorater_main \
+    --project_id={cloud-project-id} \
+    --location={project-location} \
+    --model_name="gemini-2.5-flash" \
+    --dataset={question-generation-dataset} \
+    --dataset_split=test \
+    --predictions_path=path/to/prediction/file.jsonl \
+    --output_path=path/to/output/file.jsonl
 ```
 
-*   It is important that your ingested datasets will be located at the data
-    directory that shares the root main_project_dir with the cloned mrl_eval
-    repo. This should happen on its own when ingesting the data (3.).
-*   The naming in the following section refers to this example.
+where question-generation-dataset can be one of:
 
-##### 4. Define the following variables before running the scripts:
+  - arq_MSA_question_gen
+  - arq_spoken_question_gen
+  - artydiqa_question_gen
+  - heq_question_gen
+
+#### mT5-XL Autorater results
+
+| Dataset | Answerability |
+|---|---|
+| arq_MSA_question_gen | 0.930 |
+| arq_spoken_question | 0.884 |
+| artydiqa_question_gen | 0.883 |
+| heq_question_gen | 0.915 |
+
+### Autorating for Summarisation
+
+For summarisation, the autorater evaluates three dimensions:
+
+- **Factual grounding**: all the
+information in the summary should be grounded in the original article.
+- **Relevance or Recall**: every single fact of the summary should be “salient” enough to appear
+in the summary.
+- **Quality**: the summary should be fluent and coherent. Each will be rated
+on a scale of 1-5.
+
+The following command can be used to run autorater evaluation on summarisation
+datasets:
 
 ```
-export GOOGLE_CLOUD_BUCKET_NAME=<your_bucket_name> # Without the gs:// prefix
-export PROJECT_DIR_ROOT=<${HOME}/some_dir/main_project_dir>
-export T5X_DIR=<${HOME}/some_dir/cloned_t5x_repo>
+python -m mrl_eval.evaluation.autoraters.summarization_autoraters_main \
+  --project_id={cloud-project-id} \
+  --location={project-location} \
+  --model_name="gemini-2.5-flash" \
+  --dataset={summarisation-dataset} \
+  --dataset_split="test" \
+  --predictions_path=path/to/prediction/file.jsonl \
+  --output_path=path/to/output/file.jsonl
 ```
 
-##### 5. Finetuning mT5-xl and Running Inference
+where summarisation-dataset can be one of:
 
-The finetuning script expects two argument: you name for the experiment and a
-path to a gin configuration defining the training on a given task. All finetune
-and inference configurations for mT5-xl can be found under
-`mrl_eval/models/gin/finetune_gin_configs` and
-`mrl_eval/models/gin/inference_gin_configs` respectively.
+- hesum
+- hebsummaries
+- ar_xlsum
+- asas
 
-To finetune mT5-xl on a given task, e.g. summarisation (hesum), run:
+#### mT5-XL Autorater results
 
-```bash
-cd ${HOME}/some_dir/main_project_dir/scripts
-sh xm_finetune.sh <your_chosen_name_for_the_experiment> mrl_eval/models/gin/finetune_gin_configs/finetune_mt5_xl_hesum.gin
-```
-
-Similarly, to run inference on a checkpoint in your bucket (checkpoints are
-saved to your bucket), run:
-
-```bash
-cd ${HOME}/some_dir/main_project_dir/scripts
-sh xm_infer.sh  <your_chosen_name_for_the_inference> <task_eval_gin> <the_path_to_the_checkpoint>
-```
-
-e.g. to evaluate the hesum checkpoint at
-gs://my_bucket/t5x/hesum_exp/20240722/logs/checkpoint_1004096
-
-run:
-
-```bash
-cd ${HOME}/some_dir/main_project_dir/scripts
-sh xm_infer.sh  infer_mt5xl_hesum mrl_eval/models/gin/inference_gin_configs/eval_mt5_xl_hesentiment.gin gs://my_bucket/t5x/hesum_exp/20240722/logs/checkpoint_1004096
-```
+Dataset      | Factual Grounding | Recall | Fluency | Coherence
+------------ | ----------------- | ------ | ------- | ---------
+hesum        | 0.812             | 0.153  | 4.530   | 3.931
+hebsummaries | 0.736             | 0.522  | 4.271   | 3.819
+ar_xlsum     | 0.561             | 0.205  | 4.894   | 4.865
+asas         | 0.913             | 0.546  | 3.973   | 3.560

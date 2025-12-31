@@ -15,11 +15,11 @@
 #!/bin/bash
 datasets=(
     # Hebrew
-    "nemo" "heq" "heq_question_gen" "hesum" "hesentiment" "hebnli" "hebsummaries" "hebco"
+    "nemo" "heq" "heq_question_gen" "hesum" "hesentiment" "hebnli" "hebsummaries" "hebco" "hebco_gold_mentions"
     # MSA
-    "artydiqa" "artydiqa_question_gen" "arq_MSA" "arq_MSA_question_gen" "iahlt_ner" "arabic_nli" "ar_xlsum"
+    "artydiqa" "artydiqa_question_gen" "arq_MSA" "arq_MSA_question_gen" "iahlt_ner" "arabic_nli" "ar_xlsum" "msa_sentiment" "wojood_full" "wojood_msa" "asas"
     # Levantine Arabic
-    "arq_spoken"  "arq_spoken_question_gen"  "arcoref" "arsentiment"
+    "arq_spoken"  "arq_spoken_question_gen"  "arcoref" "arcoref_gold_mentions" "arsentiment" "wojood_spoken" "shamner"
     )
 
 save_tfrecord=$1

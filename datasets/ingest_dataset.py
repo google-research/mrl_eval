@@ -29,6 +29,7 @@ _DATASET = flags.DEFINE_enum(
     None,
     constants.DATASETS,
     "The dataset you'd like to ingest.",
+    required=True,
 )
 
 _SAVE_TFRECORD = flags.DEFINE_bool(
@@ -37,26 +38,16 @@ _SAVE_TFRECORD = flags.DEFINE_bool(
     "If true, saves the data in tfrecords format in addition to jsonl.",
 )
 
-_SPLIT_DEV_FROM_TRAIN = flags.DEFINE_bool(
-    "split_dev_from_train",
-    False,
-    "Whether to split dev from train before ingestion. Should be applied only"
-    " to datasets without an official dev set. Currently only supported for"
-    " HeSentiment and HebNLI.",
-)
-
 
 def main(argv):
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")
 
   dataset = dataset_factory.dataset_factory(_DATASET.value)
-
-  if _SPLIT_DEV_FROM_TRAIN.value:
-    print("Splitting dev from train")
-    dataset.split_dev_from_train()
-
+  dataset.post_init_validator()
+  print(f"Starting to ingest dataset {_DATASET.value}")
   dataset.preprocess_dataset(_SAVE_TFRECORD.value)
+  print(f"Done ingest dataset {_DATASET.value}")
 
 
 if __name__ == "__main__":

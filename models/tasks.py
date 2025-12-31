@@ -38,8 +38,9 @@ from mrl_eval.datasets.heq import heq_lib
 from mrl_eval.datasets.hesentiment import hesentiment_lib
 from mrl_eval.datasets.hesum import hesum_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
+from mrl_eval.datasets.msa_sentiment import msa_sentiment_lib
 from mrl_eval.datasets.nemo import nemo_lib
-
+from mrl_eval.datasets.wojood import wojood_lib
 
 TaskRegistry = seqio.TaskRegistry
 TaskProcessors = Sequence[
@@ -334,6 +335,37 @@ def register_heq(model_name: str):
           context_prompt=HE_CONTEXT_PROMPT,
       ),
       None,
+  )
+
+
+def register_wojood(model_name: str):
+  """Register Wojood."""
+  for variant in wojood_lib.Variant:
+    _register_wojood(model_name, variant)
+
+
+def _register_wojood(model_name: str, variant: wojood_lib.Variant) -> None:
+  """Register Wojood task for the different dataset formulations."""
+  dataset = wojood_lib.Wojood(variant)
+  task_name = f"{dataset.dataset_name}_{model_name}"
+
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("dev")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values("inputs", "targets_as_entity_markers"),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
   )
 
 
@@ -778,6 +810,32 @@ def register_iahlt_ner(model_name: str) -> None:
   )
 
 
+def register_msa_sentiment(model_name: str) -> None:
+  """Register MSA Sentiment."""
+  task_name = constants.MSA_SENTIMENT
+  if model_name:
+    task_name = f"{task_name}_{model_name}"
+
+  dataset = msa_sentiment_lib.MSASentiment()
+  TaskRegistry.add(
+      name=task_name,
+      source=seqio.TFExampleDataSource(
+          split_to_filepattern={
+              "train": str(dataset.tfrecord_out_path("train")),
+              "validation": str(dataset.tfrecord_out_path("val")),
+              "test": str(dataset.tfrecord_out_path("test")),
+          },
+          feature_description=dataset.name_to_features(),
+          reader_cls=lambda f: tf.data.TFRecordDataset([f]),
+      ),
+      output_features=MT5_OUTPUT_FEATURES,
+      preprocessors=[
+          get_tasks_values(dataset.TEXT_KEY, dataset.LABEL_KEY),
+          *DEFAULT_PREPROCESSORS,
+      ],
+      metric_fns=dataset.metrics,
+  )
+
 # Register all tasks variants
 ALL_TASKS = [
     register_heq,
@@ -794,6 +852,8 @@ ALL_TASKS = [
     register_hebsummaries,
     register_arabic_nli,
     register_ar_xlsum,
+    register_msa_sentiment,
+    register_wojood,
 ]
 for register_task in ALL_TASKS:
   register_task(_MODEL_MT5)

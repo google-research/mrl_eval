@@ -187,6 +187,7 @@ def main(argv: Sequence[str]):
             input_ids,
             attention_mask=attention_mask,
             generation_config=generation_config,
+            disable_compile=True,
         )
 
       if not is_encoder_decoder:  # discard input tokens

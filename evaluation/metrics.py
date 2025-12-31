@@ -16,6 +16,7 @@
 """Metrics for evaluating the different tasks."""
 
 from collections.abc import Callable, Sequence
+import logging
 from typing import Any
 from mrl_eval.evaluation import metrics_utils
 from rouge_score import rouge_scorer
@@ -166,7 +167,7 @@ def get_em_cluster_matching_f1_fn(
 
   Args:
     seq_to_cluster_parsing_fn: A function that parses a string into a list of
-      clusters.
+      clusters. This function may raise exceptions on invalid input.
 
   Returns:
     A cluster matching f1 metric function.
@@ -178,14 +179,26 @@ def get_em_cluster_matching_f1_fn(
   ):
     """Computes the cluster matching f1 score."""
     matched_clusters = []
-    # pair the gt clusters with the pred clusters in each example to caclulate
+    # pair the gt clusters with the pred clusters in each example to calculate
     # the f1 score stats:
     for target, prediction in zip(targets, predictions):
       gold_clusters = seq_to_cluster_parsing_fn(target)
-      predicted_clusters = seq_to_cluster_parsing_fn(prediction)
+
+      try:
+        predicted_clusters = seq_to_cluster_parsing_fn(prediction)
+      except Exception:  # pylint: disable=broad-exception-caught
+        logging.exception(
+            "Error parsing prediction: %r. Treating as empty cluster list.",
+            prediction,
+        )
+
+        # fallback to empty cluster list
+        predicted_clusters = []
+
       matched_clusters += metrics_utils.average_score_match_clusters(
           gold_clusters, predicted_clusters
       )
+
     macro_f1 = metrics_utils.macro_f1_for_matching_clusters(
         matched_clusters,
         comparing_fn=metrics_utils.exactly_comparing_clusters,

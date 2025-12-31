@@ -22,6 +22,19 @@ for split in "train" "dev" "test"; do
   done
 done
 
+echo "Wojood"
+mkdir -p ${raw_data_dir}/wojood_spoken
+mkdir -p ${raw_data_dir}/wojood_msa
+mkdir -p ${raw_data_dir}/wojood_full
+
+wget -P ${raw_data_dir}/wojood_spoken https://sina.birzeit.edu/wojood/Wojood.zip
+unzip ${raw_data_dir}/wojood_spoken/Wojood.zip -d ${raw_data_dir}/wojood_spoken
+
+cp ${raw_data_dir}/wojood_spoken/Wojood/* ${raw_data_dir}/wojood_spoken/ -R
+cp ${raw_data_dir}/wojood_spoken/Wojood/* ${raw_data_dir}/wojood_msa/ -R
+cp ${raw_data_dir}/wojood_spoken/Wojood/* ${raw_data_dir}/wojood_full/ -R
+
+
 echo "HeQ"
 mkdir -p ${raw_data_dir}/heq
 mkdir -p ${raw_data_dir}/heq_question_gen
@@ -73,6 +86,12 @@ wget -P ${raw_data_dir}/hebco https://github.com/IAHLT/coref/raw/refs/heads/mast
 wget -P ${raw_data_dir}/hebco https://github.com/IAHLT/coref/raw/refs/heads/master/train_val_test/coref-5-heb_test.jsonl
 wget -P ${raw_data_dir}/hebco https://github.com/IAHLT/coref/raw/refs/heads/master/train_val_test/coref-5-heb_val.jsonl
 
+echo "HebCoGoldMentions"
+mkdir -p ${raw_data_dir}/hebco_gold_mentions/
+cp ${raw_data_dir}/hebco/coref-5-heb_train.jsonl ${raw_data_dir}/hebco_gold_mentions/
+cp ${raw_data_dir}/hebco/coref-5-heb_test.jsonl ${raw_data_dir}/hebco_gold_mentions/
+cp ${raw_data_dir}/hebco/coref-5-heb_val.jsonl ${raw_data_dir}/hebco_gold_mentions/
+
 echo "HebSummaries"
 mkdir -p ${raw_data_dir}/hebsummaries
 for split in "train" "val" "test"; do
@@ -91,6 +110,12 @@ for split in "train" "val" "test"; do
   wget -P ${raw_data_dir}/arcoref https://huggingface.co/datasets/HebArabNlpProject/ArabCoRef/resolve/main/arcoref_${split}.jsonl
 done
 
+echo "ArCorefGoldMentions"
+mkdir -p ${raw_data_dir}/arcoref_gold_mentions
+for split in "train" "val" "test"; do
+  cp ${raw_data_dir}/arcoref/arcoref_${split}.jsonl ${raw_data_dir}/arcoref_gold_mentions/
+done
+
 echo "ArSentiment"
 mkdir -p ${raw_data_dir}/arsentiment
 for split in "train" "val" "test"; do
@@ -100,9 +125,27 @@ done
 echo "ArXLSum"
 wget -P ${raw_data_dir}/ar_xlsum https://huggingface.co/datasets/csebuetnlp/xlsum/resolve/main/data/arabic_XLSum_v2.0.tar.bz2
 tar -xvf ${raw_data_dir}/ar_xlsum/arabic_XLSum_v2.0.tar.bz2 -C ${raw_data_dir}/ar_xlsum
-echo "Done"
 
 echo "ArabicNLI"
 for split in "train" "validation" "test"; do
   wget -P ${raw_data_dir}/arabic_nli https://huggingface.co/datasets/facebook/xnli/resolve/main/ar/${split}-00000-of-00001.parquet
 done
+
+echo "MSA_sentiment"
+mkdir -p ${raw_data_dir}/msa_sentiment
+wget -P ${raw_data_dir}/msa_sentiment https://github.com/mohamedadaly/LABR/raw/refs/heads/master/data/reviews.tsv
+for split in "train" "test"; do
+  wget -P ${raw_data_dir}/msa_sentiment https://github.com/mohamedadaly/LABR/raw/refs/heads/master/data/5class-unbalanced-${split}.txt
+done
+
+echo "ShamNER"
+for split in "train" "validation" "test"; do
+  wget -P ${raw_data_dir}/shamner https://huggingface.co/datasets/HebArabNlpProject/ShamNER/resolve/main/data/${split}-00000-of-00001.parquet
+done
+
+echo "ASAS"
+for split in "train" "dev" "test"; do
+  wget -P ${raw_data_dir}/asas https://huggingface.co/datasets/HebArabNlpProject/ASAS/resolve/main/${split}.jsonl
+done
+
+echo "Done"

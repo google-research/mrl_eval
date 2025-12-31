@@ -128,15 +128,27 @@ class Hebco(dataset_lib.Dataset):
     processed_dataset = []
     for raw_example in dataset:
       # Removing unecesary white spaces and adding a single space between words
-      standardized_example = self.standardize_text_and_adjust_clusters(
-          raw_example
+      standardized_example = standardize_text_and_adjust_clusters(
+          example=raw_example,
+          text_key=self._TEXT,
+          clusters_key=self._CLUSTERS,
+          metadata_key=self._METADATA,
+          mentions_key=self._MENTIONS,
+          word_sep=self.WORD_SEP,
+          zws=self.ZWS,
       )
       # Indexing words in the text if needed, adjusting char limit accordingly
       adjusted_char_limit = self._text_parser.get_character_limit_data(
           standardized_example[self._TEXT], self._char_limit
       )["non_indexed_text_length"]
 
-      if self._is_empty_target(standardized_example, adjusted_char_limit):
+      if is_empty_target(
+          example=standardized_example,
+          char_limit=adjusted_char_limit,
+          drop_singleton_clusters=self._drop_singleton_clusters,
+          clusters_key=self._CLUSTERS,
+          mentions_key=self._MENTIONS,
+      ):
         continue
       example = {}
       example[self.ID_FIELD] = standardized_example["doc_key"]
@@ -153,87 +165,6 @@ class Hebco(dataset_lib.Dataset):
     )
     processed_text = (processed_text).replace(self.ZWS, "")
     return processed_text
-
-  def adjust_cluster_indices(
-      self, clusters, index_mapping
-  ):
-    adjusted_clusters = []
-    for cluster in clusters:
-      adjusted_mentions = []
-      for mention in cluster[self._MENTIONS]:
-        start, end, tags = mention  # maitaining HebCo format (start, end, tags)
-        new_start = index_mapping[start] if start in index_mapping else start
-        new_end = index_mapping[end] if end in index_mapping else end
-        adjusted_mentions.append([new_start, new_end, tags])
-      if adjusted_mentions:
-        adjusted_clusters.append({
-            self._METADATA: cluster[self._METADATA],
-            self._MENTIONS: adjusted_mentions,
-        })
-    return adjusted_clusters
-
-  def _is_whitespace(self, ch):
-    return ch.isspace() and ch != self.ZWS  # Exclude ZWS
-
-  def standardize_text_and_adjust_clusters(
-      self, example
-  ):
-
-    example = copy.deepcopy(example)
-    text = example[self._TEXT]
-    clusters = example[self._CLUSTERS]
-
-    # Create a mapping from original indices to new indices
-    orig_to_new_index_mapping = {}
-
-    new_text = []
-    new_index = 0
-    char_index = 0
-    text_length = len(text)
-
-    while char_index < text_length:
-      if self._is_whitespace(text[char_index]):
-        char_index += 1
-        if new_text and new_text[-1] != self.WORD_SEP:
-          new_text.append(self.WORD_SEP)
-          orig_to_new_index_mapping[char_index - 1] = (
-              new_index  # mapping the last whitespace to a space
-          )
-          new_index += 1
-          continue
-      else:
-        orig_to_new_index_mapping[char_index] = new_index
-        new_text.append(text[char_index])
-        char_index += 1
-        new_index += 1
-
-    # remove trailing space if present
-    if new_text and new_text[-1] == self.WORD_SEP:
-      new_text.pop()
-
-    standardized_text = "".join(new_text)
-
-    # Adjust clusters using the index mapping
-    adjusted_clusters = self.adjust_cluster_indices(
-        clusters, orig_to_new_index_mapping
-    )
-    example[self._CLUSTERS] = adjusted_clusters
-    example[self._TEXT] = standardized_text
-    return example
-
-  def _is_empty_target(self, example, char_limit):
-    """Returns True if the target is empty."""
-    num_eligible_clusters = 0
-    for cluster in example[self._CLUSTERS]:
-      num_mentions = 0
-      for mention in cluster[self._MENTIONS]:
-        if mention[1] <= char_limit:
-          num_mentions += 1
-      if (num_mentions == 1 and not self._drop_singleton_clusters) or (
-          num_mentions > 1
-      ):
-        num_eligible_clusters += 1
-    return num_eligible_clusters <= 0
 
   def _prep_target_from_raw(
       self,
@@ -282,3 +213,143 @@ def get_parse_string_representation(
     return res
 
   return parse_string_representation
+
+
+def is_empty_target(
+    example,
+    char_limit,
+    drop_singleton_clusters,
+    clusters_key,
+    mentions_key,
+):
+  """Returns True if there are no eligible clusters within the char limit.
+
+  Args:
+    example: The example to check.
+    char_limit: The character limit.
+    drop_singleton_clusters: Whether to drop singleton clusters.
+    clusters_key: The key of the clusters in the example.
+    mentions_key: The key of the mentions in each cluster.
+  """
+  num_eligible_clusters = 0
+  for cluster in example[clusters_key]:
+    num_mentions = 0
+    for mention in cluster[mentions_key]:
+      if mention[1] <= char_limit:
+        num_mentions += 1
+    if (num_mentions == 1 and not drop_singleton_clusters) or (
+        num_mentions > 1
+    ):
+      num_eligible_clusters += 1
+  return num_eligible_clusters <= 0
+
+
+def _is_whitespace(ch, zws):
+  """Returns True if the character is a whitespace."""
+  return ch.isspace() and ch != zws  # Exclude zero-width-spaces
+
+
+def adjust_cluster_indices(
+    clusters,
+    index_mapping,
+    metadata_key,
+    mentions_key,
+):
+  """Adjusts the indices of the clusters based on the provided index mapping.
+
+  Args:
+    clusters: The clusters to adjust.
+    index_mapping: A mapping from original character indices to the character
+      indices.
+    metadata_key: The key of the metadata in a cluster.
+    mentions_key: The key of the mentions in a cluster.
+
+  Returns:
+    The adjusted clusters.
+  """
+  adjusted_clusters = []
+  for cluster in clusters:
+    adjusted_mentions = []
+    for mention in cluster[mentions_key]:
+      start, end, tags = mention  # maitaining HebCo format (start, end, tags)
+      new_start = index_mapping[start] if start in index_mapping else start
+      new_end = index_mapping[end] if end in index_mapping else end
+      adjusted_mentions.append([new_start, new_end, tags])
+    if adjusted_mentions:
+      adjusted_clusters.append({
+          metadata_key: cluster[metadata_key],
+          mentions_key: adjusted_mentions,
+      })
+  return adjusted_clusters
+
+
+def standardize_text_and_adjust_clusters(
+    example,
+    text_key,
+    clusters_key,
+    metadata_key,
+    mentions_key,
+    word_sep,
+    zws,
+):
+  """Standardizes the text and adjusts the cluster indices accordingly.
+
+  Removes unnecessary white spaces, maintaining a single space between words.
+
+  Args:
+    example: The example to standardize.
+    text_key: The key of the text in the example.
+    clusters_key: The key of the clusters in the example.
+    metadata_key: The key of the metadata in the cluster.
+    mentions_key: The key of the mentions in the cluster.
+    word_sep: The separator between words.
+    zws: The zero-width-space character.
+
+  Returns:
+    The standardized example.
+  """
+
+  example = copy.deepcopy(example)
+  text = example[text_key]
+  clusters = example[clusters_key]
+
+  # Create a mapping from original indices to new indices
+  orig_to_new_index_mapping = {}
+
+  new_text = []
+  new_index = 0
+  char_index = 0
+  text_length = len(text)
+
+  while char_index < text_length:
+    if _is_whitespace(ch=text[char_index], zws=zws):
+      char_index += 1
+      if new_text and new_text[-1] != word_sep:
+        new_text.append(word_sep)
+        orig_to_new_index_mapping[char_index - 1] = (
+            new_index  # mapping the last whitespace to a space
+        )
+        new_index += 1
+        continue
+    else:
+      orig_to_new_index_mapping[char_index] = new_index
+      new_text.append(text[char_index])
+      char_index += 1
+      new_index += 1
+
+  # remove trailing space if present
+  if new_text and new_text[-1] == word_sep:
+    new_text.pop()
+
+  standardized_text = "".join(new_text)
+
+  # Adjust clusters using the index mapping
+  adjusted_clusters = adjust_cluster_indices(
+      clusters=clusters,
+      index_mapping=orig_to_new_index_mapping,
+      metadata_key=metadata_key,
+      mentions_key=mentions_key,
+  )
+  example[clusters_key] = adjusted_clusters
+  example[text_key] = standardized_text
+  return example

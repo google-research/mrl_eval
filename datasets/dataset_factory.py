@@ -20,17 +20,25 @@ from mrl_eval.datasets import dataset_lib
 from mrl_eval.datasets.ar_xlsum import ar_xlsum_lib
 from mrl_eval.datasets.arabic_nli import arabic_nli_lib
 from mrl_eval.datasets.arcoref import arcoref_lib
+from mrl_eval.datasets.arcoref_gold_mentions import arcoref_gold_mentions_lib
 from mrl_eval.datasets.arq import arq_lib
 from mrl_eval.datasets.arsentiment import arsentiment_lib
 from mrl_eval.datasets.artydiqa import artydiqa_lib
+from mrl_eval.datasets.asas import asas_lib
 from mrl_eval.datasets.hebco import hebco_lib
+from mrl_eval.datasets.hebco_gold_mentions import hebco_gold_mentions_lib
 from mrl_eval.datasets.hebnli import hebnli_lib
 from mrl_eval.datasets.hebsummaries import hebsummaries_lib
 from mrl_eval.datasets.heq import heq_lib
 from mrl_eval.datasets.hesentiment import hesentiment_lib
 from mrl_eval.datasets.hesum import hesum_lib
 from mrl_eval.datasets.iahlt_ner import iahlt_ner_lib
+from mrl_eval.datasets.msa_sentiment import msa_sentiment_lib
 from mrl_eval.datasets.nemo import nemo_lib
+from mrl_eval.datasets.ontonotes import ontonotes_lib
+from mrl_eval.datasets.ontonotes_gold_mentions import ontonotes_gold_mentions_lib
+from mrl_eval.datasets.shamner import shamner_lib
+from mrl_eval.datasets.wojood import wojood_lib
 
 
 def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
@@ -54,6 +62,8 @@ def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
       return hesum_lib.HeSum()
     case constants.HEBCO:
       return hebco_lib.Hebco()
+    case constants.HEBCO_GOLD_MENTIONS:
+      return hebco_gold_mentions_lib.HebcoGoldMentions()
     case constants.ARTYDIQA:
       return artydiqa_lib.ArTyDiQA()
     case constants.ARTYDIQA_QUESTION_GEN:
@@ -70,6 +80,8 @@ def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
       return arq_lib.ArQQuestionGen(variant="MSA")
     case constants.ARCOREF:
       return arcoref_lib.ArCoref()
+    case constants.ARCOREF_GOLD_MENTIONS:
+      return arcoref_gold_mentions_lib.ArCorefGoldMentions()
     case constants.IAHLT_NER:
       return iahlt_ner_lib.IahltNer()
     case constants.HEBSUMMARIES:
@@ -78,6 +90,22 @@ def dataset_factory(dataset_name: str) -> dataset_lib.Dataset:
       return arabic_nli_lib.ArabicNLI()
     case constants.AR_XLSUM:
       return ar_xlsum_lib.ArXLSum()
+    case constants.WOJOOD_SPOKEN:
+      return wojood_lib.Wojood(variant=wojood_lib.Variant.SPOKEN)
+    case constants.WOJOOD_MSA:
+      return wojood_lib.Wojood(variant=wojood_lib.Variant.MSA)
+    case constants.WOJOOD_FULL:
+      return wojood_lib.Wojood(variant=wojood_lib.Variant.FULL)
+    case constants.MSA_SENTIMENT:
+      return msa_sentiment_lib.MSASentiment(val_size_from_train=0.02)
+    case constants.ONTONOTES:
+      return ontonotes_lib.Ontonotes()
+    case constants.ONTONOTES_GOLD_MENTIONS:
+      return ontonotes_gold_mentions_lib.OntoNotesGoldMentions()
+    case constants.SHAMNER:
+      return shamner_lib.ShamNER()
+    case constants.ASAS:
+      return asas_lib.ASAS()
 
     case _:
       raise ValueError(f"Dataset {dataset_name} is not defined.")

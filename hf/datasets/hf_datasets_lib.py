@@ -194,7 +194,7 @@ class HfDataset(abc.ABC):
           truncation=False,
           return_tensors="pt",
           add_special_tokens=False,
-      )["input_ids"].squeeze()
+      )["input_ids"].view(-1)
 
     else:
       if mask_prompt_labels:
@@ -217,7 +217,7 @@ class HfDataset(abc.ABC):
           return_tensors="pt",
       )
 
-      sample["input_ids"] = model_inputs["input_ids"].squeeze()
+      sample["input_ids"] = model_inputs["input_ids"].view(-1)
 
       if self.for_decoder_only:
         # Add separator tokens to the input ids
@@ -250,7 +250,7 @@ class HfDataset(abc.ABC):
         sample["labels"] = sample["input_ids"].clone()  # pytype: disable=attribute-error
 
         if mask_prompt_labels:
-          sample["labels"][:-len(target_ids)-1] = -100  # pytype: disable=unsupported-operands
+          sample["labels"][: -len(target_ids) - 1] = -100  # pytype: disable=unsupported-operands
 
       else:
         target_ids = self.tokenizer(
@@ -258,7 +258,7 @@ class HfDataset(abc.ABC):
             max_length=max_target_length,
             truncation=True,
             return_tensors="pt",
-        )["input_ids"].squeeze()
+        )["input_ids"].view(-1)
         sample["labels"] = target_ids
 
       sample["attention_mask"] = torch.ones_like(sample["input_ids"])

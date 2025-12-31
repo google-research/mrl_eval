@@ -16,6 +16,7 @@
 """Library for evaluating predictions."""
 
 from typing import Any
+import unicodedata
 
 from mrl_eval.datasets import dataset_lib
 
@@ -37,8 +38,26 @@ def get_scores(
     targets,
     predictions,
 ):
-  """Calculates scores for the predictions."""
+  """Calculates scores for the predictions after applying NFC normalization."""
+  # Normalize predictions
+  normalized_predictions = [
+      unicodedata.normalize("NFC", p) for p in predictions
+  ]
+
+  # Normalize targets
+  normalized_targets = []
+  for target in targets:
+    if isinstance(target, list):
+      normalized_targets.append(
+          [unicodedata.normalize("NFC", t) for t in target]
+      )
+    elif isinstance(target, str):
+      normalized_targets.append(unicodedata.normalize("NFC", target))
+    else:
+      # If item is not a list or a string, keep it as is
+      normalized_targets.append(target)
+
   scores = {}
   for metric_fn in metrics:
-    scores.update(metric_fn(targets, predictions))
+    scores.update(metric_fn(normalized_targets, normalized_predictions))
   return scores
